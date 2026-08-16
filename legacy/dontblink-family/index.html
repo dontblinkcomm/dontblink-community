@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>dontblink v1 archive</title>
+<meta name="description" content="Frozen archive of every token launched on the original dontblink launchpad (Robinhood Chain, contract 0xF441cc97…ce204)." />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#05060B" />
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+<style>
+  :root{
+    --bg:#05060B; --panel:#0d1020; --panel-2:#131734; --line:#232748;
+    --ink:#e9eaf6; --muted:#8f93b5; --accent:#8b5cf6; --accent-2:#22d3ee;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--accent-2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 18px 80px}
+  header h1{margin:0 0 6px;font-size:26px;letter-spacing:-.02em}
+  header p{margin:0;color:var(--muted);max-width:70ch}
+  .stats{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:10px 14px;min-width:120px}
+  .stat b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+  .stat span{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+  input,select{background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:9px 12px;font:inherit;outline:none}
+  input:focus,select:focus{border-color:var(--accent)}
+  input[type=search]{flex:1;min-width:200px}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:12px;display:flex;gap:11px;align-items:flex-start;overflow:hidden}
+  .logo{width:52px;height:52px;border-radius:11px;flex:0 0 auto;object-fit:cover;
+    background:var(--panel-2);border:1px solid var(--line)}
+  .noimg{display:flex;align-items:center;justify-content:center;color:var(--muted);
+    font-size:17px;font-weight:600}
+  .meta{min-width:0;flex:1}
+  .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sym{color:var(--muted);font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .bio{color:var(--muted);font-size:12.5px;margin:5px 0 0;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+    overflow-wrap:anywhere}
+  .links{margin-top:7px;display:flex;gap:9px;flex-wrap:wrap;font-size:12px}
+  .links a{color:var(--muted)}
+  .links a:hover{color:var(--accent-2)}
+  footer{margin-top:34px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);
+    padding-top:16px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+    background:var(--panel-2);padding:1px 5px;border-radius:5px}
+  #more{display:block;margin:22px auto 0;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--ink);border-radius:10px;padding:10px 22px;font:inherit;cursor:pointer}
+  #more:hover{border-color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>dontblink v1 — token archive</h1>
+    <p>Every token ever launched on the original dontblink launchpad
+      (<code id="lp"></code>, Robinhood Chain). Reconstructed from the chain's
+      <code>LaunchCreated</code> + <code>LaunchMetadata</code> events and frozen here with a local
+      copy of every logo, so nothing depends on the old site staying online.</p>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="bar">
+    <input type="search" id="q" placeholder="search name, symbol, address, deployer…" />
+    <select id="sort">
+      <option value="new">newest first</option>
+      <option value="old">oldest first</option>
+      <option value="liq">most liquidity</option>
+      <option value="vol">most 24h volume (at capture)</option>
+      <option value="az">A → Z</option>
+    </select>
+    <label style="color:var(--muted);font-size:13px">
+      <input type="checkbox" id="onlyimg" style="vertical-align:-1px" /> with logo only
+    </label>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <button id="more" hidden>load more</button>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const EXPLORER = "https://robinhoodchain.blockscout.com/address/";
+let rows = [], view = [], shown = 0, cap = null;
+const PAGE = 120;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const short = a => a ? a.slice(0, 6) + "…" + a.slice(-4) : "";
+const num = n => n.toLocaleString("en-US");
+
+function big(s) { try { return BigInt(s || "0"); } catch { return 0n; } }
+function eth(s) { return Number(big(s)) / 1e18; }
+
+function render(reset) {
+  const g = $("#grid");
+  if (reset) { g.innerHTML = ""; shown = 0; }
+  const slice = view.slice(shown, shown + PAGE);
+  const frag = document.createDocumentFragment();
+  for (const r of slice) {
+    const el = document.createElement("div");
+    el.className = "card";
+    const links = [];
+    links.push(`<a href="${EXPLORER}${esc(r.token)}" target="_blank" rel="noopener">contract</a>`);
+    if (r.pool) links.push(`<a href="${EXPLORER}${esc(r.pool)}" target="_blank" rel="noopener">pool</a>`);
+    if (r.xUrl && /^https?:/.test(r.xUrl)) links.push(`<a href="${esc(r.xUrl)}" target="_blank" rel="noopener nofollow">x</a>`);
+    if (r.webUrl && /^https?:/.test(r.webUrl)) links.push(`<a href="${esc(r.webUrl)}" target="_blank" rel="noopener nofollow">web</a>`);
+    if (r.tgUrl && /^https?:/.test(r.tgUrl)) links.push(`<a href="${esc(r.tgUrl)}" target="_blank" rel="noopener nofollow">tg</a>`);
+    const when = r.createdAt ? new Date(r.createdAt).toISOString().slice(0, 16).replace("T", " ") : "";
+    el.innerHTML =
+      (r.img
+        ? `<img class="logo" loading="lazy" src="${esc(r.img)}" alt="" />`
+        : `<div class="logo noimg">${esc((r.symbol || r.name || "?").slice(0, 2).toUpperCase())}</div>`) +
+      `<div class="meta">
+         <div class="nm">${esc(r.name || "(no name)")}</div>
+         <div class="sym">${esc(r.symbol || "(no ticker)")} · ${esc(short(r.token))}${when ? " · " + esc(when) : ""}</div>
+         ${r.bio ? `<p class="bio">${esc(r.bio)}</p>` : ""}
+         <div class="links">${links.join("")}</div>
+       </div>`;
+    frag.appendChild(el);
+  }
+  g.appendChild(frag);
+  shown += slice.length;
+  $("#more").hidden = shown >= view.length;
+  $("#more").textContent = `load more (${num(view.length - shown)} left)`;
+}
+
+function apply() {
+  const q = $("#q").value.trim().toLowerCase();
+  const onlyimg = $("#onlyimg").checked;
+  view = rows.filter(r => {
+    if (onlyimg && !r.img) return false;
+    if (!q) return true;
+    return (r.name || "").toLowerCase().includes(q)
+      || (r.symbol || "").toLowerCase().includes(q)
+      || (r.token || "").toLowerCase().includes(q)
+      || (r.deployer || "").toLowerCase().includes(q);
+  });
+  const s = $("#sort").value;
+  const by = {
+    new: (a, b) => Number(b.createdBlock) - Number(a.createdBlock),
+    old: (a, b) => Number(a.createdBlock) - Number(b.createdBlock),
+    liq: (a, b) => eth(b.liquidity) - eth(a.liquidity),
+    vol: (a, b) => eth(b.vol24hWeth) - eth(a.vol24hWeth),
+    az: (a, b) => (a.name || "").localeCompare(b.name || ""),
+  }[s];
+  view.sort(by);
+  render(true);
+}
+
+Promise.all([
+  fetch("./tokens.json").then(r => r.json()),
+  fetch("./capture.json").then(r => r.json()),
+]).then(([t, c]) => {
+  rows = t; cap = c;
+  $("#lp").textContent = c.launchpad;
+  const withLogo = rows.filter(r => r.img).length;
+  const deployers = new Set(rows.map(r => (r.deployer || "").toLowerCase())).size;
+  const stats = [
+    [num(rows.length), "tokens"],
+    [num(deployers), "deployers"],
+    [num(withLogo), "logos archived"],
+    [num(c.counts.withBio), "with bio"],
+    [Number(eth(c.cumulativeVolumeWeth)).toFixed(1) + " WETH", "cumulative volume"],
+  ];
+  $("#stats").innerHTML = stats.map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+  $("#foot").innerHTML =
+    `Captured ${esc(c.capturedAt)} at block ${esc(c.apiBlockNumber)} from ${esc(c.source)}. ` +
+    `Prices, liquidity and volume are a point-in-time snapshot — not live. ` +
+    `Raw data: <a href="./tokens.json">tokens.json</a> · ` +
+    `<a href="./tokens-api-raw.json">tokens-api-raw.json</a> · ` +
+    `<a href="./capture.json">capture.json</a>.`;
+  apply();
+});
+
+$("#q").addEventListener("input", apply);
+$("#sort").addEventListener("change", apply);
+$("#onlyimg").addEventListener("change", apply);
+$("#more").addEventListener("click", () => render(false));
+</script>
+</body>
+</html>

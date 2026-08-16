@@ -1,0 +1,16 @@
+{
+  "name": "dontblink",
+  "short_name": "dontblink",
+  "description": "don't blink. don't miss. The most fair tokens on Robinhood Chain.",
+  "start_url": "/explore",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05060B",
+  "theme_color": "#05060B",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

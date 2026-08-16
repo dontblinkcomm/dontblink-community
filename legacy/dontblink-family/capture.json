@@ -1,0 +1,28 @@
+{
+ "capturedAt": "2026-08-16T01:25:04Z",
+ "source": "https://dontblink.family",
+ "sourceApi": "https://dontblink.family/api/tokens",
+ "chainId": 4663,
+ "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
+ "launchpadContractName": "V3LaunchpadGatedMax",
+ "launchpadDeployBlock": 31524140,
+ "apiBlockNumber": "37568632",
+ "apiUpdatedAt": 1786842428968,
+ "ethUsdAtCapture": 1880.04,
+ "cumulativeVolumeWeth": "15405120402372834937570",
+ "counts": {
+  "tokens": 999,
+  "onchainLaunchCreated": 999,
+  "onchainLaunchMetadata": 962,
+  "withBio": 353,
+  "withTelegram": 5,
+  "imagesArchived": 794,
+  "tokensWithLocalImage": 897,
+  "tokensWithoutImage": 102
+ },
+ "notes": [
+  "tokens.json img fields point at this repo; imgSource keeps the original URL.",
+  "sqrtPriceX96 / liquidity / vol24hWeth / spark are a point-in-time snapshot, not live.",
+  "bio and tgUrl come from the on-chain LaunchMetadata event; the upstream /api/tokens does not expose them."
+ ]
+}
