@@ -17,11 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: node scripts/snapshot.mjs
+      # 我们自己发出去的币（v1 存档 + 链上增量 + v2 Portal 事件 + GT 行情）
+      - run: node scripts/ours.mjs
       - name: commit if changed
         run: |
           git config user.name 'boards-snapshot-bot'
           git config user.email 'xiaoa-ai001@users.noreply.github.com'
-          git add data/boards.json
+          git add data/boards.json data/ours.json
           git diff --cached --quiet && echo 'no change' && exit 0
           git commit -m 'data: boards snapshot'
           git pull --rebase origin main
