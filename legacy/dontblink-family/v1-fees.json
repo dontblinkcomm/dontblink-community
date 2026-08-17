@@ -1,6 +1,6 @@
 {
- "capturedAt": 1786954029,
- "block": 38680441,
+ "capturedAt": 1786964678,
+ "block": 38786498,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
   "claimable": 704,
@@ -9,9 +9,9 @@
   "windowOpen": 1,
   "other": 0
  },
- "wethOutstanding": "6938308451292027470",
- "wethClaimable": "4811626724174217231",
- "wethBricked": "2126681727117810239",
+ "wethOutstanding": "6976239008499350607",
+ "wethClaimable": "4847397481196963660",
+ "wethBricked": "2128841527302386947",
  "devsWithClaimable": 291,
  "bricked": [
   {
@@ -28,15 +28,15 @@
    "name": "hold or miss out",
    "deployer": "0x6ea270435a5290a03cc08a0020d4f7b5949e2d03",
    "weth": "259359532947517657",
-   "tokens": "20021440293521765219181554"
+   "tokens": "20024622687860899671961176"
   },
   {
    "token": "0x1095cbf6d102380ab1d9a185ae5ebb69d01f3392",
    "symbol": "REMUS",
    "name": "Fomo Mascot",
    "deployer": "0x11c7670b6fd4f820efa21164285db8a490eb406a",
-   "weth": "178141427981442405",
-   "tokens": "17241249064226160310817700"
+   "weth": "178898041753402625",
+   "tokens": "17242307722922213463004368"
   },
   {
    "token": "0x1faa5a8bb357d9210cd1d55e5737ec325bd8101f",
@@ -67,7 +67,7 @@
    "symbol": "THEO",
    "name": "Fomo Inu",
    "deployer": "0x17c2a55d7252971c69d6f7ee17800eed5462e272",
-   "weth": "17375293643645722",
+   "weth": "18778480056262210",
    "tokens": "3319445240323665332319714"
   },
   {
@@ -76,7 +76,7 @@
    "name": "FROGGY",
    "deployer": "0xf3ea57a10bfd731693a4db3986b7884709b53fc1",
    "weth": "16742534315938064",
-   "tokens": "5002705154403177789595248"
+   "tokens": "5003855312562597763478256"
   },
   {
    "token": "0xdcf15c44b2d18b13931a00abfb7a06136df4dff4",
