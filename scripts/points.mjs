@@ -49,7 +49,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 async function gt(path, { retries = 4 } = {}) {
   for (let attempt = 0; ; attempt++) {
     try {
-      const r = await fetch(`${GT}${path}`, { headers: { accept: 'application/json' } })
+      const r = await fetch(path.startsWith('http') ? path : `${GT}${path}`, { headers: { accept: 'application/json' } })
       if (r.status === 429 || r.status >= 500) {
         if (attempt >= retries) throw new Error(`GT ${path} ${r.status} (gave up)`)
         const backoff = 2000 * 2 ** attempt // 2s,4s,8s,16s
@@ -146,7 +146,7 @@ async function rpcBatch(calls) {
 // ETH/USD：GT simple price（会被限流）→ boards 快照里任一 /WETH 池的 quote_token_price_usd
 async function ethUsd() {
   try {
-    const j = await gt(`/simple/networks/robinhood/token_price/${WETH}`, { retries: 1 })
+    const j = await gt(`https://api.geckoterminal.com/api/v2/simple/networks/robinhood/token_price/${WETH}`, { retries: 1 })
     const v = Number(j?.data?.attributes?.token_prices?.[WETH])
     if (v > 0) return v
   } catch (e) {
