@@ -94,6 +94,49 @@ for (const t of ours.tokens) {
   stubs++
 }
 
+// ---- tokenlist.json：Uniswap 风格 token list，每枚币带 https 的 logoURI ----
+// 站内 logo 来自链上 LaunchMetadata 的 data:URI，站外（钱包 / 聚合器 / 有的 DEX 前端）不读那个，
+// 它们认 token list 或自己的收录。这里把我们全部的币（v1 存档 + v2）连同 /img/<token>.jpg、
+// /legacy/.../images/<hash>.webp 一起发成一份列表，谁要接就接 https://dontblink.community/tokenlist.json。
+// 此前这个文件是 07-09 的手写版，只有 2 枚测试币。
+{
+  const v1imgs = new Set(existsSync('legacy/dontblink-family/images') ? await readdir('legacy/dontblink-family/images') : [])
+  const list = []
+  for (const t of ours.tokens) {
+    if (!t.token || !t.symbol) continue
+    let logo = null
+    if (t.imageUrl?.startsWith('/')) logo = SITE + t.imageUrl
+    else if (t.imageUrl?.startsWith('data:image/')) {
+      const ext = t.imageUrl.match(/^data:image\/(\w+);/)?.[1]
+      const file = `${t.token}.${ext === 'jpeg' ? 'jpg' : ext}`
+      if (existsSync(`img/${file}`)) logo = `${SITE}/img/${file}`
+    } else if (t.imageUrl?.includes('dontblink.family/api/token-images/')) {
+      const hash = t.imageUrl.split('/').pop()
+      if (v1imgs.has(`${hash}.webp`)) logo = `${SITE}/legacy/dontblink-family/images/${hash}.webp`
+      else logo = t.imageUrl
+    } else if (t.imageUrl?.startsWith('http')) logo = t.imageUrl
+    else if (t.gt?.img?.startsWith('http')) logo = t.gt.img
+    const entry = { chainId: 4663, address: t.token, name: (t.name || t.symbol).slice(0, 40), symbol: t.symbol.slice(0, 20), decimals: 18 }
+    if (logo) entry.logoURI = logo
+    entry.tags = [t.mode === 'v1' ? 'v1' : 'v2']
+    list.push(entry)
+  }
+  const tokenlist = {
+    name: 'dontblink',
+    timestamp: new Date(ours.at || Date.now()).toISOString(),
+    version: { major: 2, minor: 0, patch: 0 },
+    logoURI: `${SITE}/logo.png`,
+    keywords: ['dontblink', 'robinhood chain', 'launchpad'],
+    tags: {
+      v1: { name: 'dontblink v1', description: 'Launched on the original dontblink launchpad (archived)' },
+      v2: { name: 'dontblink v2', description: 'Launched through the dontblink v2 Portal' },
+    },
+    tokens: list,
+  }
+  await writeFile('tokenlist.json', JSON.stringify(tokenlist))
+  console.log(`tokenlist: ${list.length} tokens, ${list.filter((t) => t.logoURI).length} with logo`)
+}
+
 // ---- 站点级静态路由也给真实的 200 页（否则 /explore 直接访问是 404 状态码，爬虫会当它不存在）----
 const STATIC_PAGES = {
   explore: ['Explore tokens · dontblink', 'Every token launched on dontblink, live prices and trading on Robinhood Chain.'],
