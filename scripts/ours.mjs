@@ -103,6 +103,7 @@ for (const t of archive) {
     token: t.token.toLowerCase(),
     pool: (t.pool ?? '').toLowerCase() || null,
     mode: 'v1',
+    creator: (t.deployer ?? '').toLowerCase() || null,
     name: t.name ?? '',
     symbol: t.symbol ?? '',
     // 存档里的 img 已经是站内完整路径（/legacy/dontblink-family/images/….webp），原样用。
@@ -136,6 +137,7 @@ try {
       token,
       pool: '0x' + word(lg.data, 0).slice(24),
       mode: 'v1',
+      creator: addr(lg.topics[2]),
       name: meta.name,
       symbol: meta.symbol,
       imageUrl: v1Images.get(token) ?? null,
@@ -192,6 +194,7 @@ try {
       token,
       pool: /^0x0+$/.test(pool) ? null : pool,
       mode,
+      creator: addr(lg.topics[3]),
       name: meta.name,
       symbol: meta.symbol,
       imageUrl: v2Images.get(token) ?? null,
