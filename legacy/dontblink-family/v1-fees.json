@@ -1,6 +1,6 @@
 {
- "capturedAt": 1786952008,
- "block": 38660349,
+ "capturedAt": 1786952970,
+ "block": 38669902,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
   "claimable": 704,
@@ -9,8 +9,8 @@
   "windowOpen": 1,
   "other": 0
  },
- "wethOutstanding": "6935352123219181931",
- "wethClaimable": "4808670396101371692",
+ "wethOutstanding": "6935389057631566551",
+ "wethClaimable": "4808707330513756312",
  "wethBricked": "2126681727117810239",
  "devsWithClaimable": 291,
  "bricked": [
@@ -36,7 +36,7 @@
    "name": "Fomo Mascot",
    "deployer": "0x11c7670b6fd4f820efa21164285db8a490eb406a",
    "weth": "178141427981442405",
-   "tokens": "17239414460572595023195600"
+   "tokens": "17241249064226160310817700"
   },
   {
    "token": "0x1faa5a8bb357d9210cd1d55e5737ec325bd8101f",
@@ -44,7 +44,7 @@
    "name": "fly",
    "deployer": "0xdc64ebdc773d3a43da35a4692e65042da9cf6f3c",
    "weth": "104315429368453007",
-   "tokens": "16533522784586124614693586"
+   "tokens": "16534431073148582781360253"
   },
   {
    "token": "0x85c22af3e157754a69fb7be8478ab28aceb6fc1c",
@@ -76,7 +76,7 @@
    "name": "FROGGY",
    "deployer": "0xf3ea57a10bfd731693a4db3986b7884709b53fc1",
    "weth": "16742534315938064",
-   "tokens": "4997136897678382012588621"
+   "tokens": "5002705154403177789595248"
   },
   {
    "token": "0xdcf15c44b2d18b13931a00abfb7a06136df4dff4",
