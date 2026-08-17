@@ -72,6 +72,27 @@ async function erc20Meta(token) {
 }
 
 const prev = await readFile('data/ours.json', 'utf8').then((t) => JSON.parse(t)).catch(() => null)
+/** 旧文件里的 gt 可能还是整份 GT 响应（2MB 那版）—— 沿用时先压成瘦格式，别把胖的又写回去 */
+function slimGt(g) {
+  if (!g || !g.data) return g ?? undefined
+  const a = g.data.attributes ?? {}
+  const base = (g.included ?? [])[0]
+  const tx = a.transactions?.h24
+  const img = base?.attributes?.image_url
+  return {
+    price: a.base_token_price_usd == null ? null : Number(a.base_token_price_usd),
+    c1h: Number(a.price_change_percentage?.h1 ?? 0),
+    c24h: Number(a.price_change_percentage?.h24 ?? 0),
+    vol: Number(a.volume_usd?.h24 ?? 0),
+    fdv: Number(a.fdv_usd ?? 0),
+    tx: tx ? Number(tx.buys ?? 0) + Number(tx.sells ?? 0) : 0,
+    at: a.pool_created_at ?? null,
+    name: a.name ?? null,
+    dex: g.data.relationships?.dex?.data?.id ?? null,
+    img: img && img !== 'missing.png' ? img : null,
+  }
+}
+for (const t of prev?.tokens ?? []) if (t.gt) t.gt = slimGt(t.gt)
 const prevByToken = new Map((prev?.tokens ?? []).map((t) => [t.token, t]))
 
 // ---- v1：存档 + 增量 ----
@@ -84,7 +105,9 @@ for (const t of archive) {
     mode: 'v1',
     name: t.name ?? '',
     symbol: t.symbol ?? '',
-    imageUrl: t.img ? `/legacy/dontblink-family/${t.img}` : null,
+    // 存档里的 img 已经是站内完整路径（/legacy/dontblink-family/images/….webp），原样用。
+    // 第一版又拼了一次前缀 → 双重路径 404 → 首页 v1 币的 logo 全部不显示。
+    imageUrl: t.img || null,
     createdBlock: Number(t.createdBlock ?? 0),
     createdAt: t.createdAt ?? null,
   })
@@ -116,6 +139,37 @@ try {
 
 // ---- v2 ----
 const MODE = ['instant', 'queue', 'curve']
+const V2_TOPIC_META = '0x81757bd4a3f7375c9021d3bd561d1a8075d765544734931f26896acacda7ccdc' // LaunchMetadata(token, imageURI, xUrl, webUrl, tgUrl, bio)
+/** 解 ABI 里的动态 string（LaunchMetadata 的 data 段：5 个 string，头 5 个 word 是偏移） */
+function abiStrings(data, n) {
+  const out = []
+  for (let i = 0; i < n; i++) {
+    const off = parseInt(word(data, i), 16) * 2
+    const len = parseInt(data.slice(2 + off, 2 + off + 64), 16)
+    out.push(Buffer.from(data.slice(2 + off + 64, 2 + off + 64 + len * 2), 'hex').toString('utf8'))
+  }
+  return out
+}
+/** imageURI 是 data:application/json;base64,{name,symbol,description,image} —— 取里面的 image（本身也是 data URI，≤8KB） */
+function imageFromTokenURI(uri) {
+  try {
+    if (!uri?.startsWith('data:application/json;base64,')) return uri?.startsWith('http') ? uri : null
+    const j = JSON.parse(Buffer.from(uri.slice('data:application/json;base64,'.length), 'base64').toString('utf8'))
+    return typeof j.image === 'string' && j.image.length < 12_000 ? j.image : null
+  } catch {
+    return null
+  }
+}
+const v2Images = new Map()
+try {
+  for (const lg of await getLogs(V2_PORTAL, V2_TOPIC_META, V2_FROM_BLOCK, head)) {
+    const [imageURI] = abiStrings(lg.data, 5)
+    const img = imageFromTokenURI(imageURI)
+    if (img) v2Images.set(addr(lg.topics[1]), img)
+  }
+} catch (e) {
+  console.log('v2 metadata scan failed:', String(e).slice(0, 120))
+}
 try {
   const logs = await getLogs(V2_PORTAL, V2_TOPIC_LAUNCHED, V2_FROM_BLOCK, head)
   for (const lg of logs) {
@@ -129,12 +183,12 @@ try {
       mode,
       name: meta.name,
       symbol: meta.symbol,
-      imageUrl: null,
+      imageUrl: v2Images.get(token) ?? null,
       createdBlock: parseInt(lg.blockNumber, 16),
       createdAt: null,
     })
   }
-  console.log(`v2: ${logs.length} launches`)
+  console.log(`v2: ${logs.length} launches, ${v2Images.size} with image`)
 } catch (e) {
   console.log('v2 scan failed:', String(e).slice(0, 120))
 }
@@ -178,10 +232,26 @@ for (let i = 0; i < withPool.length; i += 30) {
   for (const t of batch) {
     const p = byPool.get(t.pool)
     if (p) {
-      // 只留前端 parsePool 用得到的那部分，别把整份 GT 响应搬进来
+      // **只存前端用到的字段。** 第一版把整份 GT 响应搬进来，1004 枚 = 2MB，
+      // 每个访客每分钟拉一次 → 多刷几下就撞 GitHub Pages 的每 IP 限流，页面整个变成
+      // "Rate limit exceeded"。现在每枚 ~200 字节。
+      const a = p.attributes
       const baseId = p.relationships?.base_token?.data?.id
       const base = included.find((x) => x.id === baseId)
-      t.gt = { data: p, included: base ? [base] : [] }
+      const tx = a.transactions?.h24
+      const img = base?.attributes?.image_url
+      t.gt = {
+        price: a.base_token_price_usd == null ? null : Number(a.base_token_price_usd),
+        c1h: Number(a.price_change_percentage?.h1 ?? 0),
+        c24h: Number(a.price_change_percentage?.h24 ?? 0),
+        vol: Number(a.volume_usd?.h24 ?? 0),
+        fdv: Number(a.fdv_usd ?? 0),
+        tx: tx ? Number(tx.buys ?? 0) + Number(tx.sells ?? 0) : 0,
+        at: a.pool_created_at ?? null,
+        name: a.name ?? null,
+        dex: p.relationships?.dex?.data?.id ?? null,
+        img: img && img !== 'missing.png' ? img : null,
+      }
       fresh++
     } else if (prevByToken.get(t.token)?.gt) {
       t.gt = prevByToken.get(t.token).gt
