@@ -94,6 +94,19 @@ for (const t of ours.tokens) {
   stubs++
 }
 
+// ---- 站点级静态路由也给真实的 200 页（否则 /explore 直接访问是 404 状态码，爬虫会当它不存在）----
+const STATIC_PAGES = {
+  explore: ['Explore tokens · dontblink', 'Every token launched on dontblink, live prices and trading on Robinhood Chain.'],
+  launch: ['Launch a token · dontblink', 'One click, gas only. Fixed supply, locked liquidity, no presale — launch on Robinhood Chain.'],
+  fees: ['Fees · dontblink', 'Claim your creator fees from every trade of your token, forever.'],
+  bridge: ['Bridge · dontblink', 'Bridge to Robinhood Chain to trade and launch on dontblink.'],
+  points: ['Points · dontblink', 'Points and referrals on dontblink.'],
+}
+for (const [seg, [title, description]] of Object.entries(STATIC_PAGES)) {
+  await mkdir(seg, { recursive: true })
+  await writeFile(`${seg}/index.html`, renderStub({ title, description, image: `${SITE}/banner-card.png`, url: `${SITE}/${seg}` }))
+}
+
 // ---- sitemap / robots / 404 ----
 const today = new Date(ours.at || Date.now()).toISOString().slice(0, 10)
 const sitemap =
