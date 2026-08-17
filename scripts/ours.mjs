@@ -282,6 +282,7 @@ const SUPERSEDED = new Set([
   '0x51b5b3f3e3c4c2c6fe71e584ed91dcff61c738ff', // DONTBLINK Genesis（08-16 首发，非靓号）→ 0x50DA…CDbDb
   '0x49fcfa44d30f1e279954f82a321676d2e77640b9', // DONTBLINK Curve → 0x6f72…6dBDb
   '0xc11788e9e7199c662813574ab7e2018dd27c4d01', // DONTBLINK Drop → 0x4C7E…7dbdb
+  '0x1635df31006e4b1020b27a548d6c614960e1dbdb', // DONTBLINK Vault 误绑 @dontblinkfamily（前团队号）→ 0x4e95…f0DbDb 绑 @dontblink_cto
 ])
 const list = [...tokens.values()].filter((t) => !SUPERSEDED.has(t.token)).sort((a, b) => b.createdBlock - a.createdBlock)
 await mkdir('data', { recursive: true })
