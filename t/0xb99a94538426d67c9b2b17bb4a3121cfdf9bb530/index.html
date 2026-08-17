@@ -29,12 +29,38 @@
       content="Trade Fomo Box ($BOX) on Robinhood Chain — launched on dontblink, the fair launchpad on Robinhood Chain."
     />
     <meta name="twitter:image" content="https://dontblink.community/legacy/dontblink-family/images/e1ce0cd463deb148be33020e8f6b8b2bede6c2ba3dde59fa952ebe63efcb94b1.webp" />
-    <script type="module" crossorigin src="/assets/index-Dlmg-tNJ.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CWJ--UVN.css">
+    <script type="module" crossorigin src="/assets/index-O7so72SQ.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D5yQRSZH.css">
   <link rel="canonical" href="https://dontblink.community/t/0xb99a94538426d67c9b2b17bb4a3121cfdf9bb530" />
     <meta property="og:url" content="https://dontblink.community/t/0xb99a94538426d67c9b2b17bb4a3121cfdf9bb530" />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- 开屏骨架：不等 JS、不等字体、不等网络。浏览器解析到这里就能画出底色 + 顶栏 + 品牌字，
+         React 挂载后这个节点被替换掉。之前是空的 <div id="root">，手机上从点开到第一帧全是白/黑屏，
+         要等 gzip 180KB 的 JS 下完并解析（老板 08-17："h5 开屏也特别慢"）。 -->
+    <style>
+      html { background: #05060b; color-scheme: dark; }
+      body { margin: 0; background: #05060b; }
+      #boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #05060b; }
+      #boot .bw {
+        font: 700 clamp(46px, 12.5vw, 138px)/1 'Quicksand', 'Instrument Sans', system-ui, sans-serif;
+        letter-spacing: -0.04em; color: #eceaff; opacity: 0.96;
+      }
+      #boot .bd { display: flex; gap: 6px; }
+      #boot .bd i { width: 6px; height: 6px; border-radius: 50%; background: #7b6cf6; opacity: 0.35; animation: bp 1s ease-in-out infinite; }
+      #boot .bd i:nth-child(2) { animation-delay: 0.15s }
+      #boot .bd i:nth-child(3) { animation-delay: 0.3s }
+      @keyframes bp { 0%, 100% { opacity: 0.25; transform: translateY(0) } 50% { opacity: 1; transform: translateY(-3px) } }
+      @media (prefers-reduced-motion: reduce) { #boot .bd i { animation: none } }
+    </style>
+    <div id="root">
+      <div id="boot">
+        <div class="bw">dontblink</div>
+        <div class="bd"><i></i><i></i><i></i></div>
+      </div>
+    </div>
+    <!-- 榜单/首页的数字都来自这一份同源快照。和 JS 并行下载，React 一挂载就已经在缓存里。 -->
+    <link rel="preload" as="fetch" href="/data/ours.json" crossorigin />
+    <link rel="preconnect" href="https://rpc.mainnet.chain.robinhood.com" crossorigin />
   </body>
 </html>
