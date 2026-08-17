@@ -1,6 +1,6 @@
 {
- "capturedAt": 1786964678,
- "block": 38786498,
+ "capturedAt": 1786982245,
+ "block": 38961822,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
   "claimable": 704,
@@ -9,9 +9,9 @@
   "windowOpen": 1,
   "other": 0
  },
- "wethOutstanding": "6976239008499350607",
- "wethClaimable": "4847397481196963660",
- "wethBricked": "2128841527302386947",
+ "wethOutstanding": "7056602853828596457",
+ "wethClaimable": "4927752921700971718",
+ "wethBricked": "2128849932127624739",
  "devsWithClaimable": 291,
  "bricked": [
   {
@@ -20,7 +20,7 @@
    "name": "Fearless Of Missing Out",
    "deployer": "0xb55f8775763c2e9cd6a3e6ae5045ae3b1fffad44",
    "weth": "1476089877730043123",
-   "tokens": "58386854719324053470956380"
+   "tokens": "58415184234162824227441253"
   },
   {
    "token": "0x67b3c0f026113312cf947dda2aaf2d6b7b6d8949",
@@ -28,7 +28,7 @@
    "name": "hold or miss out",
    "deployer": "0x6ea270435a5290a03cc08a0020d4f7b5949e2d03",
    "weth": "259359532947517657",
-   "tokens": "20024622687860899671961176"
+   "tokens": "20046162598160510495966462"
   },
   {
    "token": "0x1095cbf6d102380ab1d9a185ae5ebb69d01f3392",
@@ -36,7 +36,7 @@
    "name": "Fomo Mascot",
    "deployer": "0x11c7670b6fd4f820efa21164285db8a490eb406a",
    "weth": "178898041753402625",
-   "tokens": "17242307722922213463004368"
+   "tokens": "17446255655944771573922420"
   },
   {
    "token": "0x1faa5a8bb357d9210cd1d55e5737ec325bd8101f",
@@ -52,7 +52,7 @@
    "name": "Intern Fomo Cat",
    "deployer": "0x0f29604869cdb8c9d3d1c0eb371440e736b5afe5",
    "weth": "36410396949538227",
-   "tokens": "9436981254164906904278146"
+   "tokens": "9467257562935786732539000"
   },
   {
    "token": "0x3ac06cef4e65683118494b5fbe9be2661b92468d",
@@ -67,8 +67,8 @@
    "symbol": "THEO",
    "name": "Fomo Inu",
    "deployer": "0x17c2a55d7252971c69d6f7ee17800eed5462e272",
-   "weth": "18778480056262210",
-   "tokens": "3319445240323665332319714"
+   "weth": "18786884881500002",
+   "tokens": "3499467518859760926241852"
   },
   {
    "token": "0x8483fd1a638544acaaab55e6cbd163483f4cb92b",
@@ -76,7 +76,7 @@
    "name": "FROGGY",
    "deployer": "0xf3ea57a10bfd731693a4db3986b7884709b53fc1",
    "weth": "16742534315938064",
-   "tokens": "5003855312562597763478256"
+   "tokens": "5060014752277672507004991"
   },
   {
    "token": "0xdcf15c44b2d18b13931a00abfb7a06136df4dff4",
@@ -84,7 +84,7 @@
    "name": "dont miss",
    "deployer": "0xdc64ebdc773d3a43da35a4692e65042da9cf6f3c",
    "weth": "5941901380595125",
-   "tokens": "3123147667772380781550131"
+   "tokens": "3131886234614397313993178"
   }
  ]
 }
