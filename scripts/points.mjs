@@ -1,4 +1,4 @@
-// Compute the SSI points snapshot from on-chain-verifiable data and publish it
+// Compute the dontblink points snapshot from on-chain-verifiable data and publish it
 // same-origin as /data/points.json (read by the Points page).
 //
 // Scoring (documented on the Points page — keep the two in sync):
@@ -6,16 +6,26 @@
 //   - referral bonus: 10% of each invitee's base points goes to their referrer
 //     (bindings come from the on-chain ReferralRegistry, event Bound)
 //
+// 08-17 rewrite — where the volume comes from:
+//   Uniswap V3 `Swap` logs on our pools, read straight from the RPC. Not GeckoTerminal:
+//   GT 429s GitHub Actions runners (shared Azure IPs) just like it 429s Cloudflare — the
+//   first version of this script never produced a single row in production.
+//   The trader is `tx.from` of the swap (tx.origin) — that's who pressed the button no
+//   matter which router / aggregator (Fomo, Uniswap, our own SoftQuotaRouter) sat in between.
+//   USD = |WETH leg| × ETH/USD (GT simple price, falling back to the boards snapshot).
+//
+//   data/points-ledger.json is the **cumulative** ledger: per-wallet totals + the set of
+//   swap ids seen in the last 48h (dedupe window). Every run scans the last ~26h of blocks,
+//   skips what it has already counted, and adds the rest. Points therefore accumulate from
+//   2026-08-17 onwards; before that there is nothing (GT-era snapshots were always empty).
+//
 // KNOWN LIMITATIONS (read before trusting the numbers for any real reward gate):
-//   - Volume comes from GeckoTerminal's *recent* trades window per pool, not a
-//     full historical index. Points therefore reflect a rolling window, not an
-//     all-time cumulative total. For a true cumulative ledger you need to persist
-//     and accumulate across runs (keyed by trade id) — not done here.
 //   - Points == gross volume, which is trivially wash-farmable: a wallet doing
 //     round-trip self-trades inflates its own score for only gas+fee cost. If
 //     these points ever gate a real airdrop, add a per-wallet cap / net-volume /
 //     round-trip exclusion FIRST. `trades` per wallet is surfaced so lopsided
 //     trade-count vs volume patterns are at least visible.
+//   - Only WETH-quoted pools count (stock-quoted launches are skipped for now).
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 
 const GT = 'https://api.geckoterminal.com/api/v2/networks/robinhood'
@@ -24,7 +34,14 @@ const REFERRAL_REGISTRY = '0xe616b60bDD1E3aC0719eE2b81d2d0bd7018A957D'
 const REGISTRY_DEPLOY_BLOCK = 6147237
 // keccak256("Bound(address,address)")
 const BOUND_TOPIC = '0x0d128562eaa47ab89086803e64a0f96847c0ed3cc63c26251f29ba1aede09d4e'
-const LOG_CHUNK = 45000 // eth_getLogs block window; many RPCs cap the range
+const LOG_CHUNK = 200_000 // eth_getLogs block window for the swap scan (RH RPC takes far more; keep responses small)
+const WETH = '0x0bd7d308f8e1639fab988df18a8011f41eacad73'
+// keccak256("Swap(address,address,int256,int256,uint160,uint128,int24)") — Uniswap V3 pool
+const SWAP_TOPIC = '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67'
+const BLOCKS_PER_HOUR = 9 * 3600 // RH chain ≈ 9-10 blocks/s (measured 08-17)
+const SCAN_HOURS = 26 // each run re-scans this much (overlaps the 30-min cadence generously)
+const DEDUPE_HOURS = 48 // keep seen swap ids this long
+const LEDGER = 'data/points-ledger.json'
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -79,7 +96,7 @@ export function computePoints({ trades, referralBindings }) {
     seen.add(id)
     const w = wallets.get(trader) ?? { volumeUsd: 0, trades: 0 }
     w.volumeUsd += usd
-    w.trades += 1
+    w.trades += Number(t.trades ?? 1)
     wallets.set(trader, w)
   }
 
@@ -106,82 +123,187 @@ export function computePoints({ trades, referralBindings }) {
 }
 
 // 池子来源：data/ours.json（ours.mjs 每 10 分钟从链上事件 + v1 存档汇总的**全部** dontblink 币）。
-// 此前读的是 07-09 的 tokenlist.json —— 只有 2 枚测试币，所以榜单永远是空的。
-// 只拉过去 24h 有成交的池（gt.tx > 0），按成交量取前 MAX_POOLS 个：GT 的 trades 端点本来
-// 就是"最近一窗"，没成交的池拉了也是空，还白白吃限流。
-const MAX_POOLS = Number(process.env.SNAPSHOT_MAX_POOLS ?? 60)
-
+// 只扫 24h 有成交的池（gt.tx > 0）+ 上一轮账本里出现过的池：没成交的池 getLogs 也是空。
 async function activePools() {
   const ours = JSON.parse(await readFile('data/ours.json', 'utf8'))
   return (ours.tokens ?? [])
     .filter((t) => t.pool && t.gt && Number(t.gt.tx ?? 0) > 0)
     .sort((a, b) => Number(b.gt.vol ?? 0) - Number(a.gt.vol ?? 0))
-    .slice(0, MAX_POOLS)
-    .map((t) => ({ token: t.token, pool: t.pool.toLowerCase(), symbol: t.symbol }))
+    .map((t) => ({ token: t.token.toLowerCase(), pool: t.pool.toLowerCase(), symbol: t.symbol }))
 }
 
-async function collectTrades(pools) {
-  const trades = []
-  let poolCount = 0
-  for (const { pool, symbol } of pools) {
-    poolCount++
-    try {
-      const res = await gt(`/pools/${pool}/trades`)
-      for (const t of Array.isArray(res?.data) ? res.data : []) {
-        const a = t?.attributes ?? {}
-        const usd = Number(a.volume_in_usd ?? 0)
-        if (a.tx_from_address && usd > 0) {
-          trades.push({ id: t.id, trader: a.tx_from_address, volumeUsd: usd })
-        }
-      }
-    } catch (e) {
-      console.error(`trades failed for ${symbol} pool ${pool}: ${e.message}`)
+async function rpcBatch(calls) {
+  const r = await fetch(RPC, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(calls.map((c, i) => ({ jsonrpc: '2.0', id: i, method: c.method, params: c.params }))),
+  })
+  const j = await r.json()
+  if (!Array.isArray(j)) throw new Error(`RPC batch: ${JSON.stringify(j).slice(0, 200)}`)
+  return j.sort((a, b) => a.id - b.id).map((x) => (x.error ? null : x.result))
+}
+
+// ETH/USD：GT simple price（会被限流）→ boards 快照里任一 /WETH 池的 quote_token_price_usd
+async function ethUsd() {
+  try {
+    const j = await gt(`/simple/networks/robinhood/token_price/${WETH}`, { retries: 1 })
+    const v = Number(j?.data?.attributes?.token_prices?.[WETH])
+    if (v > 0) return v
+  } catch (e) {
+    console.error(`ETH price via GT failed (${e.message}), using boards snapshot`)
+  }
+  const b = JSON.parse(await readFile('data/boards.json', 'utf8'))
+  for (const key of ['pools', 'trending_pools', 'new_pools']) {
+    for (const p of b?.boards?.[key]?.data ?? []) {
+      const a = p.attributes ?? {}
+      if (/\/ WETH/.test(a.name ?? '') && Number(a.quote_token_price_usd) > 0) return Number(a.quote_token_price_usd)
     }
   }
-  return { trades, poolCount }
+  throw new Error('no ETH/USD price available')
 }
 
-async function collectReferrals() {
-  const bindings = []
-  let head
-  try {
-    head = parseInt(await rpc('eth_blockNumber', []), 16)
-  } catch (e) {
-    console.error(`eth_blockNumber failed (referrals skipped): ${e.message}`)
-    return bindings
+const toBig = (hex) => {
+  const v = BigInt(hex)
+  return v >= 1n << 255n ? v - (1n << 256n) : v
+}
+const abs = (v) => (v < 0n ? -v : v)
+
+// 从链上 Swap 日志拿成交：[{ id, trader, volumeUsd, block }]
+async function collectSwaps(pools, fromBlock, toBlock, price) {
+  const byPool = new Map(pools.map((p) => [p.pool, p]))
+  const addresses = [...byPool.keys()]
+  if (addresses.length === 0) return []
+  // 每个池 WETH 在哪一侧：token0 = 地址小的那个
+  const wethIs0 = new Map(pools.map((p) => [p.pool, WETH < p.token]))
+
+  const logs = []
+  for (let from = fromBlock; from <= toBlock; from += LOG_CHUNK) {
+    const to = Math.min(from + LOG_CHUNK - 1, toBlock)
+    try {
+      const chunk = await rpc('eth_getLogs', [
+        { address: addresses, topics: [SWAP_TOPIC], fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) },
+      ])
+      logs.push(...chunk)
+    } catch (e) {
+      console.error(`swap logs [${from}-${to}] failed (non-fatal): ${e.message}`)
+    }
   }
-  // Chunk the range so a range-limited RPC doesn't reject the whole query.
-  for (let from = REGISTRY_DEPLOY_BLOCK; from <= head; from += LOG_CHUNK) {
-    const to = Math.min(from + LOG_CHUNK - 1, head)
+
+  // tx.from：按 hash 去重后分批查
+  const hashes = [...new Set(logs.map((l) => l.transactionHash))]
+  const from = new Map()
+  // RPC 有每分钟请求数限制：批间歇 + 429 退避重试。查不到 from 的 swap 这一轮不记账、
+  // 也不进 seen —— 下一轮（30 分钟后）会再试，不会漏。
+  for (let i = 0; i < hashes.length; i += 40) {
+    const slice = hashes.slice(i, i + 40)
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const res = await rpcBatch(slice.map((h) => ({ method: 'eth_getTransactionByHash', params: [h] })))
+        res.forEach((tx, k) => tx?.from && from.set(slice[k], tx.from.toLowerCase()))
+        break
+      } catch (e) {
+        if (attempt === 3) console.error(`tx lookup batch failed: ${e.message}`)
+        else await sleep(1500 * 2 ** attempt)
+      }
+    }
+    await sleep(400)
+  }
+
+  const trades = []
+  for (const l of logs) {
+    const pool = l.address.toLowerCase()
+    const data = l.data.slice(2)
+    if (data.length < 64 * 2) continue
+    const amount0 = toBig('0x' + data.slice(0, 64))
+    const amount1 = toBig('0x' + data.slice(64, 128))
+    const wethAmt = wethIs0.get(pool) ? amount0 : amount1
+    const eth = Number(abs(wethAmt)) / 1e18
+    const trader = from.get(l.transactionHash)
+    if (!trader || !(eth > 0)) continue
+    trades.push({ id: `${l.transactionHash}:${parseInt(l.logIndex, 16)}`, trader, volumeUsd: eth * price, block: parseInt(l.blockNumber, 16), pool })
+  }
+  return trades
+}
+
+async function loadLedger() {
+  try {
+    return JSON.parse(await readFile(LEDGER, 'utf8'))
+  } catch {
+    return { since: new Date().toISOString(), lastBlock: 0, wallets: {}, seen: {} }
+  }
+}
+
+// 推荐绑定：增量扫。RH 的 RPC 一次 getLogs 能吃 4000 万个区块（08-17 实测），
+// 但每分钟的请求数有限 —— 从部署块起按 45k 切 722 刀会被 "Too Many Requests"。
+// 账本里记 referralBlock，每轮只扫新块；首轮一刀切完。
+async function collectReferrals(ledger, head) {
+  const bindings = ledger.referrals ?? []
+  const from = (ledger.referralBlock ?? REGISTRY_DEPLOY_BLOCK - 1) + 1
+  if (from > head) return bindings
+  const REF_CHUNK = 5_000_000
+  let scannedTo = from - 1
+  for (let a = from; a <= head; a += REF_CHUNK) {
+    const b = Math.min(a + REF_CHUNK - 1, head)
     try {
       const logs = await rpc('eth_getLogs', [
         {
           address: REFERRAL_REGISTRY,
           topics: [BOUND_TOPIC],
-          fromBlock: '0x' + from.toString(16),
-          toBlock: '0x' + to.toString(16),
+          fromBlock: '0x' + a.toString(16),
+          toBlock: '0x' + b.toString(16),
         },
       ])
       for (const log of logs) {
-        bindings.push({
-          invitee: '0x' + log.topics[1].slice(26),
-          referrer: '0x' + log.topics[2].slice(26),
-        })
+        bindings.push({ invitee: '0x' + log.topics[1].slice(26), referrer: '0x' + log.topics[2].slice(26) })
       }
+      scannedTo = b
     } catch (e) {
-      console.error(`referral logs [${from}-${to}] failed (non-fatal): ${e.message}`)
+      console.error(`referral logs [${a}-${b}] failed (will retry next run): ${e.message}`)
+      break
     }
   }
+  ledger.referrals = bindings
+  ledger.referralBlock = scannedTo
   return bindings
 }
 
 async function main() {
   const pools = await activePools()
+  const ledger = await loadLedger()
+  // 上一轮账本里的池也继续扫（今天没成交也可能有昨天没扫到的）
+  for (const [pool, meta] of Object.entries(ledger.pools ?? {})) {
+    if (!pools.some((p) => p.pool === pool)) pools.push({ pool, token: meta.token, symbol: meta.symbol })
+  }
   if (pools.length === 0) console.error('no active dontblink pools in ours.json; writing empty snapshot')
 
-  const { trades, poolCount } = await collectTrades(pools)
-  const referralBindings = await collectReferrals()
+  const head = parseInt(await rpc('eth_blockNumber', []), 16)
+  const scanFrom = Math.max(1, head - SCAN_HOURS * BLOCKS_PER_HOUR)
+  const price = await ethUsd()
+  const swaps = await collectSwaps(pools, scanFrom, head, price)
+
+  // 合并进累计账本（按 swap id 去重）
+  let added = 0
+  for (const t of swaps) {
+    if (ledger.seen[t.id]) continue
+    ledger.seen[t.id] = t.block
+    const w = (ledger.wallets[t.trader] ??= { volumeUsd: 0, trades: 0 })
+    w.volumeUsd += t.volumeUsd
+    w.trades += 1
+    added++
+  }
+  const keepAfter = head - DEDUPE_HOURS * BLOCKS_PER_HOUR
+  for (const [id, blk] of Object.entries(ledger.seen)) if (blk < keepAfter) delete ledger.seen[id]
+  ledger.lastBlock = head
+  ledger.updated = new Date().toISOString()
+  ledger.ethUsd = price
+  ledger.pools = Object.fromEntries(pools.map((p) => [p.pool, { token: p.token, symbol: p.symbol }]))
+  const referralBindings = await collectReferrals(ledger, head)
+  await mkdir('data', { recursive: true })
+  await writeFile(LEDGER, JSON.stringify(ledger))
+
+  const trades = Object.entries(ledger.wallets).map(([trader, w]) => ({ id: trader, trader, volumeUsd: w.volumeUsd, trades: w.trades }))
   const { wallets, referrals, points } = computePoints({ trades, referralBindings })
+  const poolCount = pools.length
 
   const out = {
     updated: new Date().toISOString(),
@@ -200,7 +322,7 @@ async function main() {
   await mkdir('data', { recursive: true })
   await writeFile('data/points.json', JSON.stringify(out))
   console.log(
-    `points.json: ${out.wallets.length} wallets from ${poolCount} active pools / ${trades.length} trades, ${referralBindings.length} referral bindings`,
+    `points.json: ${out.wallets.length} wallets, ${poolCount} pools scanned [${scanFrom}-${head}], ${swaps.length} swaps seen / ${added} new, ETH $${price.toFixed(0)}, ${referralBindings.length} referral bindings`,
   )
 }
 
