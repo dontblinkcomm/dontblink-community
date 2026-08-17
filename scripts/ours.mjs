@@ -117,6 +117,17 @@ const archiveHead = Math.max(0, ...archive.map((t) => Number(t.createdBlock ?? 0
 console.log(`v1 archive: ${archive.length} tokens up to block ${archiveHead}; head=${head}`)
 try {
   const logs = await getLogs(V1_LAUNCHPAD, V1_TOPIC_CREATED, archiveHead + 1, head)
+  // 存档之后新发的 v1 币没有本地图 —— 从 v1 的 LaunchMetadata 事件里取 imageURI（和 v2 同一个 topic）
+  const v1Images = new Map()
+  if (logs.length) {
+    try {
+      for (const lg of await getLogs(V1_LAUNCHPAD, '0x81757bd4a3f7375c9021d3bd561d1a8075d765544734931f26896acacda7ccdc', archiveHead + 1, head)) {
+        const [imageURI] = abiStrings(lg.data, 5)
+        const img = imageFromTokenURI(imageURI)
+        if (img) v1Images.set(addr(lg.topics[1]), img)
+      }
+    } catch {}
+  }
   for (const lg of logs) {
     const token = addr(lg.topics[1])
     if (tokens.has(token)) continue
@@ -127,7 +138,7 @@ try {
       mode: 'v1',
       name: meta.name,
       symbol: meta.symbol,
-      imageUrl: null,
+      imageUrl: v1Images.get(token) ?? null,
       createdBlock: parseInt(lg.blockNumber, 16),
       createdAt: null,
     })
