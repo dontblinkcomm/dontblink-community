@@ -1,17 +1,17 @@
 {
- "capturedAt": 1786989837,
- "block": 39037570,
+ "capturedAt": 1786995582,
+ "block": 39094862,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
-  "claimable": 704,
+  "claimable": 705,
   "nothing": 285,
   "capped": 9,
-  "windowOpen": 1,
+  "windowOpen": 0,
   "other": 0
  },
- "wethOutstanding": "7171738941653766002",
- "wethClaimable": "5042870493623966247",
- "wethBricked": "2128868448029799755",
+ "wethOutstanding": "7212271217040394921",
+ "wethClaimable": "5082676260587616567",
+ "wethBricked": "2129594956452778354",
  "devsWithClaimable": 291,
  "bricked": [
   {
@@ -35,7 +35,7 @@
    "symbol": "REMUS",
    "name": "Fomo Mascot",
    "deployer": "0x11c7670b6fd4f820efa21164285db8a490eb406a",
-   "weth": "178898041753402625",
+   "weth": "179624550176381224",
    "tokens": "17466829041018071444749028"
   },
   {
@@ -76,7 +76,7 @@
    "name": "FROGGY",
    "deployer": "0xf3ea57a10bfd731693a4db3986b7884709b53fc1",
    "weth": "16742534315938064",
-   "tokens": "5060014752277672507004991"
+   "tokens": "5062058762155757016107355"
   },
   {
    "token": "0xdcf15c44b2d18b13931a00abfb7a06136df4dff4",
