@@ -98,6 +98,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const short = a => a ? a.slice(0, 6) + "…" + a.slice(-4) : "";
 const num = n => n.toLocaleString("en-US");
+const usdM = (v) => v >= 1e9 ? "$" + (v/1e9).toFixed(2) + "B" : v >= 1e6 ? "$" + (v/1e6).toFixed(1) + "M" : v >= 1e3 ? "$" + (v/1e3).toFixed(0) + "K" : "$" + v.toFixed(0);
 
 function big(s) { try { return BigInt(s || "0"); } catch { return 0n; } }
 function eth(s) { return Number(big(s)) / 1e18; }
@@ -171,7 +172,11 @@ Promise.all([
     [num(deployers), "deployers"],
     [num(withLogo), "logos archived"],
     [num(c.counts.withBio), "with bio"],
-    [Number(eth(c.cumulativeVolumeWeth)).toFixed(1) + " WETH", "cumulative volume"],
+    // 美元优先（按抓取时刻的 ETH 价折算，capture.json 里的 ethUsdAtCapture），WETH 放小字。
+    // 老板 08-17："最好显示美元，M 表示"。
+    [usdM(Number(eth(c.cumulativeVolumeWeth)) * (c.ethUsdAtCapture || 0)) +
+       ` <small style="font-size:12px;color:#8b8fa8;font-weight:500">${Number(eth(c.cumulativeVolumeWeth)).toFixed(0)} WETH</small>`,
+     "cumulative volume"],
   ];
   $("#stats").innerHTML = stats.map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
   $("#foot").innerHTML =
