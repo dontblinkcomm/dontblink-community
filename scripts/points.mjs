@@ -24,8 +24,6 @@ const REFERRAL_REGISTRY = '0xe616b60bDD1E3aC0719eE2b81d2d0bd7018A957D'
 const REGISTRY_DEPLOY_BLOCK = 6147237
 // keccak256("Bound(address,address)")
 const BOUND_TOPIC = '0x0d128562eaa47ab89086803e64a0f96847c0ed3cc63c26251f29ba1aede09d4e'
-const WETH = '0x0bd7d308f8e1639fab988df18a8011f41eacad73' // numeraire, not one of ours
-const MAX_POOLS_PER_TOKEN = Number(process.env.SNAPSHOT_MAX_POOLS ?? 3)
 const LOG_CHUNK = 45000 // eth_getLogs block window; many RPCs cap the range
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -107,32 +105,37 @@ export function computePoints({ trades, referralBindings }) {
   return { wallets, referrerOf, referrals, points }
 }
 
-async function collectTrades(tokens) {
+// 池子来源：data/ours.json（ours.mjs 每 10 分钟从链上事件 + v1 存档汇总的**全部** dontblink 币）。
+// 此前读的是 07-09 的 tokenlist.json —— 只有 2 枚测试币，所以榜单永远是空的。
+// 只拉过去 24h 有成交的池（gt.tx > 0），按成交量取前 MAX_POOLS 个：GT 的 trades 端点本来
+// 就是"最近一窗"，没成交的池拉了也是空，还白白吃限流。
+const MAX_POOLS = Number(process.env.SNAPSHOT_MAX_POOLS ?? 60)
+
+async function activePools() {
+  const ours = JSON.parse(await readFile('data/ours.json', 'utf8'))
+  return (ours.tokens ?? [])
+    .filter((t) => t.pool && t.gt && Number(t.gt.tx ?? 0) > 0)
+    .sort((a, b) => Number(b.gt.vol ?? 0) - Number(a.gt.vol ?? 0))
+    .slice(0, MAX_POOLS)
+    .map((t) => ({ token: t.token, pool: t.pool.toLowerCase(), symbol: t.symbol }))
+}
+
+async function collectTrades(pools) {
   const trades = []
   let poolCount = 0
-  for (const token of tokens) {
-    let pools = []
+  for (const { pool, symbol } of pools) {
+    poolCount++
     try {
-      const res = await gt(`/tokens/${token}/pools`)
-      pools = (Array.isArray(res?.data) ? res.data : []).map((p) => p?.attributes?.address).filter(Boolean)
-    } catch (e) {
-      console.error(`pools lookup failed for ${token}: ${e.message}`)
-      continue
-    }
-    for (const pool of pools.slice(0, MAX_POOLS_PER_TOKEN)) {
-      poolCount++
-      try {
-        const res = await gt(`/pools/${pool}/trades`)
-        for (const t of Array.isArray(res?.data) ? res.data : []) {
-          const a = t?.attributes ?? {}
-          const usd = Number(a.volume_in_usd ?? 0)
-          if (a.tx_from_address && usd > 0) {
-            trades.push({ id: t.id, trader: a.tx_from_address, volumeUsd: usd })
-          }
+      const res = await gt(`/pools/${pool}/trades`)
+      for (const t of Array.isArray(res?.data) ? res.data : []) {
+        const a = t?.attributes ?? {}
+        const usd = Number(a.volume_in_usd ?? 0)
+        if (a.tx_from_address && usd > 0) {
+          trades.push({ id: t.id, trader: a.tx_from_address, volumeUsd: usd })
         }
-      } catch (e) {
-        console.error(`trades failed for pool ${pool}: ${e.message}`)
       }
+    } catch (e) {
+      console.error(`trades failed for ${symbol} pool ${pool}: ${e.message}`)
     }
   }
   return { trades, poolCount }
@@ -173,15 +176,10 @@ async function collectReferrals() {
 }
 
 async function main() {
-  const tokenlist = JSON.parse(await readFile('tokenlist.json', 'utf8'))
-  const tokens = (tokenlist.tokens ?? [])
-    .map((t) => t.address?.toLowerCase())
-    .filter((a) => a && a !== WETH)
-  if (tokens.length === 0) {
-    console.error('tokenlist has no non-WETH tokens; writing empty snapshot')
-  }
+  const pools = await activePools()
+  if (pools.length === 0) console.error('no active dontblink pools in ours.json; writing empty snapshot')
 
-  const { trades, poolCount } = await collectTrades(tokens)
+  const { trades, poolCount } = await collectTrades(pools)
   const referralBindings = await collectReferrals()
   const { wallets, referrals, points } = computePoints({ trades, referralBindings })
 
@@ -202,7 +200,7 @@ async function main() {
   await mkdir('data', { recursive: true })
   await writeFile('data/points.json', JSON.stringify(out))
   console.log(
-    `points.json: ${out.wallets.length} wallets from ${tokens.length} tokens / ${poolCount} pools / ${trades.length} trades, ${referralBindings.length} referral bindings`,
+    `points.json: ${out.wallets.length} wallets from ${poolCount} active pools / ${trades.length} trades, ${referralBindings.length} referral bindings`,
   )
 }
 

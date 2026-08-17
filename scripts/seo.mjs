@@ -101,6 +101,9 @@ const STATIC_PAGES = {
   fees: ['Fees · dontblink', 'Claim your creator fees from every trade of your token, forever.'],
   bridge: ['Bridge · dontblink', 'Bridge to Robinhood Chain to trade and launch on dontblink.'],
   points: ['Points · dontblink', 'Points and referrals on dontblink.'],
+  'v1-fees': ['v1 fees · dontblink', 'Claim creator fees for tokens launched on dontblink v1.'],
+  claim: ['Celebrity claim · dontblink', 'Verify your X handle and claim the vault bound to it.'],
+  rewards: ['Fees · dontblink', 'Claim your creator fees from every trade of your token, forever.'],
 }
 for (const [seg, [title, description]] of Object.entries(STATIC_PAGES)) {
   await mkdir(seg, { recursive: true })

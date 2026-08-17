@@ -16,11 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: node scripts/points.mjs
+      # v1 手续费页的数据（dev-index + 全量可领快照）。此前这两个文件从没进过线上仓库，
+      # /v1-fees 页永远卡在 "Loading the v1 registry…"。扫 999 枚 v1 币约 5 分钟。
+      - run: python3 scripts/v1-fee-index.py || echo 'v1 index failed (non-fatal)'
       - name: commit if changed
         run: |
           git config user.name 'points-snapshot-bot'
           git config user.email 'xiaoa-ai001@users.noreply.github.com'
-          git add data/points.json
+          git add data/points.json legacy/dontblink-family/dev-index.json legacy/dontblink-family/v1-fees.json
           git diff --cached --quiet && echo 'no change' && exit 0
           git commit -m 'data: points snapshot'
           git pull --rebase origin main

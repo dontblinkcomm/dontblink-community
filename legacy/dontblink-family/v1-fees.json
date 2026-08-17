@@ -1,0 +1,90 @@
+{
+ "capturedAt": 1786952008,
+ "block": 38660349,
+ "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
+ "counts": {
+  "claimable": 704,
+  "nothing": 285,
+  "capped": 9,
+  "windowOpen": 1,
+  "other": 0
+ },
+ "wethOutstanding": "6935352123219181931",
+ "wethClaimable": "4808670396101371692",
+ "wethBricked": "2126681727117810239",
+ "devsWithClaimable": 291,
+ "bricked": [
+  {
+   "token": "0x3541c13a60bfe5c39bcc113060269146c190c072",
+   "symbol": "FOMO",
+   "name": "Fearless Of Missing Out",
+   "deployer": "0xb55f8775763c2e9cd6a3e6ae5045ae3b1fffad44",
+   "weth": "1476089877730043123",
+   "tokens": "58386854719324053470956380"
+  },
+  {
+   "token": "0x67b3c0f026113312cf947dda2aaf2d6b7b6d8949",
+   "symbol": "HOMO",
+   "name": "hold or miss out",
+   "deployer": "0x6ea270435a5290a03cc08a0020d4f7b5949e2d03",
+   "weth": "259359532947517657",
+   "tokens": "20021440293521765219181554"
+  },
+  {
+   "token": "0x1095cbf6d102380ab1d9a185ae5ebb69d01f3392",
+   "symbol": "REMUS",
+   "name": "Fomo Mascot",
+   "deployer": "0x11c7670b6fd4f820efa21164285db8a490eb406a",
+   "weth": "178141427981442405",
+   "tokens": "17239414460572595023195600"
+  },
+  {
+   "token": "0x1faa5a8bb357d9210cd1d55e5737ec325bd8101f",
+   "symbol": "FLY",
+   "name": "fly",
+   "deployer": "0xdc64ebdc773d3a43da35a4692e65042da9cf6f3c",
+   "weth": "104315429368453007",
+   "tokens": "16533522784586124614693586"
+  },
+  {
+   "token": "0x85c22af3e157754a69fb7be8478ab28aceb6fc1c",
+   "symbol": "RATATOUILLE",
+   "name": "Intern Fomo Cat",
+   "deployer": "0x0f29604869cdb8c9d3d1c0eb371440e736b5afe5",
+   "weth": "36410396949538227",
+   "tokens": "9436981254164906904278146"
+  },
+  {
+   "token": "0x3ac06cef4e65683118494b5fbe9be2661b92468d",
+   "symbol": "SE",
+   "name": "se",
+   "deployer": "0xe108100f003601d39920c8b95e36a294d52e3e67",
+   "weth": "32305332800636909",
+   "tokens": "9260291086803140345971858"
+  },
+  {
+   "token": "0x79310e76e7a1459c4459b4a7390f5679ca22c347",
+   "symbol": "THEO",
+   "name": "Fomo Inu",
+   "deployer": "0x17c2a55d7252971c69d6f7ee17800eed5462e272",
+   "weth": "17375293643645722",
+   "tokens": "3319445240323665332319714"
+  },
+  {
+   "token": "0x8483fd1a638544acaaab55e6cbd163483f4cb92b",
+   "symbol": "FROGGY",
+   "name": "FROGGY",
+   "deployer": "0xf3ea57a10bfd731693a4db3986b7884709b53fc1",
+   "weth": "16742534315938064",
+   "tokens": "4997136897678382012588621"
+  },
+  {
+   "token": "0xdcf15c44b2d18b13931a00abfb7a06136df4dff4",
+   "symbol": "MISS",
+   "name": "dont miss",
+   "deployer": "0xdc64ebdc773d3a43da35a4692e65042da9cf6f3c",
+   "weth": "5941901380595125",
+   "tokens": "3123147667772380781550131"
+  }
+ ]
+}
