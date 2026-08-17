@@ -147,6 +147,7 @@ const STATIC_PAGES = {
   'v1-fees': ['v1 fees · dontblink', 'Claim creator fees for tokens launched on dontblink v1.'],
   claim: ['Celebrity claim · dontblink', 'Verify your X handle and claim the vault bound to it.'],
   rewards: ['Fees · dontblink', 'Claim your creator fees from every trade of your token, forever.'],
+  affiliate: ['Affiliate · dontblink', 'Your link pays you: a cut of every launch and opening-window buy, on-chain, instantly.'],
 }
 for (const [seg, [title, description]] of Object.entries(STATIC_PAGES)) {
   await mkdir(seg, { recursive: true })
