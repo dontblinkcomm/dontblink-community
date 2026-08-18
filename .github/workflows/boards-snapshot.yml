@@ -25,8 +25,15 @@ jobs:
         run: |
           git config user.name 'boards-snapshot-bot'
           git config user.email 'xiaoa-ai001@users.noreply.github.com'
-          git add data/boards.json data/ours.json sitemap.xml robots.txt 404.html t curve drop img explore launch fees bridge points
+          # tokenlist.json 是 seo.mjs 每轮都会重写的产物。它漏在这份白名单外，于是每轮都留一份
+          # 未暂存改动，下面的 git pull --rebase 直接拒绝执行（exit 128）——2026-08-17 16:0x
+          # 起整个 job 就是这么连续失败的：数据每轮都算对了、commit 也成功了，就是推不上去，
+          # 站上的代币列表因此冻了 27 小时（REBLINK / NiuLai 等新币全卡在没推出去的那个 commit 里）。
+          git add data/boards.json data/ours.json tokenlist.json sitemap.xml robots.txt 404.html t curve drop img explore launch fees bridge points
           git diff --cached --quiet && echo 'no change' && exit 0
           git commit -m 'data: boards snapshot'
-          git pull --rebase origin main
+          # --autostash：万一以后哪个脚本又写了白名单之外的文件，rebase 会自动把它收起来再放回去，
+          # 而不是整个 job 失败。上面那次事故的真正教训不是"漏了一个文件名"，而是"漏一个就全挂，
+          # 且挂得无声无息"。
+          git pull --rebase --autostash origin main
           git push origin main
