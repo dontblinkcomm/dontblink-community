@@ -208,8 +208,21 @@ try {
 }
 
 // ---- 行情：GT pools/multi，30 个一批 ----
-// 新的在前：GT 一旦开始限流，至少最新那批币（首页最先看到的）已经拿到了行情。
-const withPool = [...tokens.values()].filter((t) => t.pool).sort((a, b) => b.createdBlock - a.createdBlock)
+// **v2 的币排在最前面，然后才按区块从新到旧。**
+//
+// 原来只按 createdBlock 排。看起来合理，实际后果是：v1 还在持续出币（区块比我们大部分
+// v2 币都新），于是我们自己的 13 枚要和 1000+ 枚 v1 抢那点新鲜行情的名额。
+// 2026-08-18 实测 GT 免费接口在第 3 批就 429：`fresh 58, failed 956` —— 1016 枚里只有
+// 58 枚拿到新价，其余全部沿用旧数据，最老的停在 08-09（九天前）。
+// GENESIS 就是这么排到几十位开外的：链上真实 FDV 约 $7.7K，首页却显示 $17.2K（34 小时
+// 前的化石价），差 123%。
+//
+// v2 一共十几枚，永远落在第 1 批，而第 1 批从来没被限流过 —— 首页看的就是这些。
+// v1 拿不到新行情是可以接受的（老板 2026-08-18：「以 v2 数据为主，v1 可有可无」）。
+const isV2 = (t) => t.mode !== 'v1'
+const withPool = [...tokens.values()]
+  .filter((t) => t.pool)
+  .sort((a, b) => (isV2(b) ? 1 : 0) - (isV2(a) ? 1 : 0) || b.createdBlock - a.createdBlock)
 let fresh = 0
 let failed = 0
 let gtDown = false // 连续被限流就别再撞了 —— 35 批 × 25 秒退避 = 15 分钟，cron 等不起
@@ -273,7 +286,14 @@ for (let i = 0; i < withPool.length; i += 30) {
   }
   await sleep(1_500)
 }
+const v2Pools = withPool.filter(isV2)
+const v2Fresh = v2Pools.filter((t) => t.gt && prevByToken.get(t.token)?.gt !== t.gt).length
 console.log(`GT: fresh ${fresh}, failed ${failed}, pools ${withPool.length}, no-pool ${tokens.size - withPool.length}`)
+// v2 是首页在看的那一批。它要是没拿满，说明连第 1 批都被限流了，属于要立刻处理的情况。
+console.log(`GT v2: ${v2Fresh}/${v2Pools.length} fresh`)
+if (v2Pools.length && v2Fresh < v2Pools.length) {
+  console.log('WARNING: 有 v2 币没拿到新行情 —— 首页会显示过期价格')
+}
 
 if (fresh === 0 && tokens.size === 0) {
   console.error('nothing to write')
