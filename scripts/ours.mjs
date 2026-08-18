@@ -295,6 +295,110 @@ if (v2Pools.length && v2Fresh < v2Pools.length) {
   console.log('WARNING: 有 v2 币没拿到新行情 —— 首页会显示过期价格')
 }
 
+// ---- 内盘（bonding curve）行情：GT 索引不到，自己从合约算 ----
+//
+// 内盘币还没建 Uniswap 池，GT 里根本不存在，所以首页一直显示 "On the curve" + 一排横杠。
+// 但这些数据我们自己全有：报价是 CurveSale 的纯函数，成交量和笔数在它自己的
+// Bought / Sold 事件里。一次 eth_call + 一次 getLogs 就够，不欠任何第三方。
+//
+// 刻意复用 `gt` 这个字段名和结构 —— 前端照着它渲染，这样内盘币不用改一行前端就能显示。
+const CURVE_OF = '0x05adc47e' // curveOf(address)
+const NET_IN_FOR = '0x4904ad2f' // netInFor(uint256) —— 买 1 枚要付多少 quote，恒有定义
+const TOPIC_BOUGHT = '0x27330bd7589580547b6437e08f9c60653de63691d2d2b2c13bff9ee67da2a68d' // Bought(address,uint256,uint256,uint256,uint256)
+const TOPIC_SOLD = '0xe029f26dbcf8c42dd2f352c10214a7fc26773dc62482c6241334a0402ac09a80' // Sold(address,uint256,uint256,uint256)
+
+async function ethCall(to, data) {
+  return rpc('eth_call', [{ to, data }, 'latest'])
+}
+
+async function curveMarket(t, ethUsd) {
+  const curve = '0x' + (await ethCall(V2_PORTAL, CURVE_OF + t.token.slice(2).padStart(64, '0'))).slice(26)
+  if (/^0x0+$/.test(curve)) return null
+  // 买 1 枚要付多少 quote（wei）→ 这就是当前挂单价
+  const oneToken = (10n ** 18n).toString(16).padStart(64, '0')
+  const raw = await ethCall(curve, NET_IN_FOR + oneToken).catch(() => null)
+  if (!raw || raw === '0x') return null
+  const priceEth = Number(BigInt(raw)) / 1e18
+  const supRaw = await ethCall(t.token, '0x18160ddd').catch(() => null) // totalSupply()
+  const supply = supRaw ? Number(BigInt(supRaw)) / 1e18 : 0
+  return { curve, priceUsd: priceEth * ethUsd, fdv: priceEth * ethUsd * supply }
+}
+
+// ETH/USD：**从链上的 USDG/WETH 池直接算**，不问 GT。
+//
+// 第一版写的是找 GT 要 WETH 报价 —— 本地一跑就露馅：GT 对我们直接 429，
+// ethUsd = 0，内盘一枚都定不了价。把内盘的显示挂在那个正在限流的接口上，
+// 等于把刚修好的毛病原样搬到新功能里。
+//
+// 这条链上有 USDG（6 位小数），0.01% 档那个池子流动性最好。
+// WETH(0x0bd7…) < USDG(0x5fc5…)，所以 WETH 是 token0，
+// sqrtPriceX96² 得到的是「每 WETH 原始单位换多少 USDG 原始单位」，
+// 再乘 10^(18-6) 换成人类单位。2026-08-18 实测得 $1,897.16，与 GT 口径一致。
+const USDG_WETH_POOL = '0x52e65B17fB6E5BA00Ed806f37Afcd2DaA50271Ca'
+let ethUsd = 0
+try {
+  const slot0 = await ethCall(USDG_WETH_POOL, '0x3850c7bd') // slot0()
+  const sqrtX96 = BigInt('0x' + slot0.slice(2, 66))
+  const ratio = Number(sqrtX96) / 2 ** 96
+  ethUsd = ratio * ratio * 10 ** 12
+} catch (e) {
+  console.log(`ETH 价读取失败: ${String(e).slice(0, 80)}`)
+}
+if (!(ethUsd > 100 && ethUsd < 100_000)) {
+  // 读出个离谱的数就当没读到 —— 宁可内盘不显示，也不能把错价挂到首页上
+  console.log(`ETH 价异常 (${ethUsd})，内盘行情本轮跳过`)
+  ethUsd = 0
+}
+
+const curveTokens = [...tokens.values()].filter((t) => !t.pool && t.mode === 'curve')
+let curveOk = 0
+if (curveTokens.length && ethUsd > 0) {
+  for (const t of curveTokens) {
+    try {
+      const m = await curveMarket(t, ethUsd)
+      if (!m) continue
+      const head2 = Number(await rpc('eth_blockNumber', []))
+      const logs = [...(await getLogs(m.curve, TOPIC_BOUGHT, V2_FROM_BLOCK, head2)), ...(await getLogs(m.curve, TOPIC_SOLD, V2_FROM_BLOCK, head2))]
+      // Bought(buyer, quoteIn, tokensOut, fee, refund) / Sold(seller, tokensIn, quoteOut, fee)
+      // 只数条数与 quote 侧金额；两个事件的第 1 个非索引参数都是 quote 或 token 数量，
+      // 这里按 topic 区分，认不出的就不计入，宁可少算也不瞎算。
+      let vol = 0
+      let tx = 0
+      for (const lg of logs) {
+        const t0 = lg.topics?.[0]
+        if (t0 === TOPIC_BOUGHT) {
+          // Bought(buyer, amountIn, tokensOut, fee+tax, refund)
+          // **要减掉 refund**：amountIn 是用户发出的总额，超过单账号配额的部分会在同一笔里
+          // 原路退回。直接拿 amountIn 当成交额会虚报 —— CURVE 这一枚实测能虚报出好几倍。
+          const sent = BigInt('0x' + word(lg.data, 0))
+          const refund = BigInt('0x' + word(lg.data, 3))
+          vol += Number(sent > refund ? sent - refund : 0n) / 1e18
+          tx++
+        } else if (t0 === TOPIC_SOLD) {
+          vol += Number(BigInt('0x' + word(lg.data, 1))) / 1e18
+          tx++
+        }
+      }
+      t.gt = {
+        price: m.priceUsd,
+        c1h: 0,
+        c24h: 0,
+        vol: vol * ethUsd,
+        fdv: m.fdv,
+        tx,
+        at: null,
+        name: `${t.symbol} · curve`,
+        dex: 'dontblink-curve',
+        img: null,
+      }
+      curveOk++
+    } catch (e) {
+      console.log(`curve ${t.symbol}: ${String(e).slice(0, 80)}`)
+    }
+  }
+}
+console.log(`curve: ${curveOk}/${curveTokens.length} priced (ETH=$${ethUsd})`)
+
 if (fresh === 0 && tokens.size === 0) {
   console.error('nothing to write')
   process.exit(1)
