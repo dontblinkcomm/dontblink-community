@@ -124,12 +124,24 @@ export function computePoints({ trades, referralBindings }) {
 
 // 池子来源：data/ours.json（ours.mjs 每 10 分钟从链上事件 + v1 存档汇总的**全部** dontblink 币）。
 // 只扫 24h 有成交的池（gt.tx > 0）+ 上一轮账本里出现过的池：没成交的池 getLogs 也是空。
+// **v1 的交易只按 0.2 倍计分。**
+// 积分最终映射到 $BLINK 分配，而 v1 池子的手续费有一半流向前团队的金库 —— 满额计分等于
+// 我们拿自己的代币，去补贴那些给对家贡献收入的成交。但也不能归零：700 多个 v1 老用户是
+// 我们想承接的社区，把他们从榜上抹掉等于把人推走。0.2 倍的意思是"你还在榜上，但同样一笔钱
+// 放在 v2 上值 5 倍"。系数改这里一处即可。
+const V1_WEIGHT = 0.2
+
 async function activePools() {
   const ours = JSON.parse(await readFile('data/ours.json', 'utf8'))
   return (ours.tokens ?? [])
     .filter((t) => t.pool && t.gt && Number(t.gt.tx ?? 0) > 0)
     .sort((a, b) => Number(b.gt.vol ?? 0) - Number(a.gt.vol ?? 0))
-    .map((t) => ({ token: t.token.toLowerCase(), pool: t.pool.toLowerCase(), symbol: t.symbol }))
+    .map((t) => ({
+      token: t.token.toLowerCase(),
+      pool: t.pool.toLowerCase(),
+      symbol: t.symbol,
+      weight: t.mode === 'v1' ? V1_WEIGHT : 1,
+    }))
 }
 
 async function rpcBatch(calls) {
@@ -171,6 +183,7 @@ const abs = (v) => (v < 0n ? -v : v)
 // 从链上 Swap 日志拿成交：[{ id, trader, volumeUsd, block }]
 async function collectSwaps(pools, fromBlock, toBlock, price) {
   const byPool = new Map(pools.map((p) => [p.pool, p]))
+  const weightOf = new Map(pools.map((p) => [p.pool, p.weight ?? 1]))
   const addresses = [...byPool.keys()]
   if (addresses.length === 0) return []
   // 每个池 WETH 在哪一侧：token0 = 地址小的那个
@@ -220,7 +233,16 @@ async function collectSwaps(pools, fromBlock, toBlock, price) {
     const eth = Number(abs(wethAmt)) / 1e18
     const trader = from.get(l.transactionHash)
     if (!trader || !(eth > 0)) continue
-    trades.push({ id: `${l.transactionHash}:${parseInt(l.logIndex, 16)}`, trader, volumeUsd: eth * price, block: parseInt(l.blockNumber, 16), pool })
+    // volumeUsd 是"计分用"的量（已乘版本权重）；rawUsd 是真实成交额，只用于展示
+    const w = weightOf.get(pool) ?? 1
+    trades.push({
+      id: `${l.transactionHash}:${parseInt(l.logIndex, 16)}`,
+      trader,
+      volumeUsd: eth * price * w,
+      rawUsd: eth * price,
+      block: parseInt(l.blockNumber, 16),
+      pool,
+    })
   }
   return trades
 }
@@ -286,8 +308,9 @@ async function main() {
   for (const t of swaps) {
     if (ledger.seen[t.id]) continue
     ledger.seen[t.id] = t.block
-    const w = (ledger.wallets[t.trader] ??= { volumeUsd: 0, trades: 0 })
+    const w = (ledger.wallets[t.trader] ??= { volumeUsd: 0, rawUsd: 0, trades: 0 })
     w.volumeUsd += t.volumeUsd
+    w.rawUsd = (w.rawUsd ?? 0) + (t.rawUsd ?? t.volumeUsd)
     w.trades += 1
     added++
   }
@@ -301,7 +324,7 @@ async function main() {
   await mkdir('data', { recursive: true })
   await writeFile(LEDGER, JSON.stringify(ledger))
 
-  const trades = Object.entries(ledger.wallets).map(([trader, w]) => ({ id: trader, trader, volumeUsd: w.volumeUsd, trades: w.trades }))
+  const trades = Object.entries(ledger.wallets).map(([trader, w]) => ({ id: trader, trader, volumeUsd: w.volumeUsd, rawUsd: w.rawUsd ?? w.volumeUsd, trades: w.trades }))
   const { wallets, referrals, points } = computePoints({ trades, referralBindings })
   const poolCount = pools.length
 
@@ -311,7 +334,7 @@ async function main() {
       .map(([address, pts]) => ({
         address,
         points: Math.round(pts),
-        volumeUsd: Math.round((wallets.get(address)?.volumeUsd ?? 0) * 100) / 100,
+        volumeUsd: Math.round((ledger.wallets[address]?.rawUsd ?? wallets.get(address)?.volumeUsd ?? 0) * 100) / 100,
         trades: wallets.get(address)?.trades ?? 0,
         referrals: referrals.get(address) ?? 0,
       }))

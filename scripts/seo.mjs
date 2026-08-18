@@ -147,6 +147,7 @@ const STATIC_PAGES = {
   'v1-fees': ['v1 fees · dontblink', 'Claim creator fees for tokens launched on dontblink v1.'],
   claim: ['Celebrity claim · dontblink', 'Verify your X handle and claim the vault bound to it.'],
   rewards: ['Fees · dontblink', 'Claim your creator fees from every trade of your token, forever.'],
+  docs: ['How fees work · dontblink', 'Every fee on dontblink, where it goes, and who can change it — fixed in contracts, verifiable on-chain.'],
   treasury: ['Treasury · dontblink', 'Protocol revenue, where it sits and what the platform has done — read live from the chain.'],
   partners: ['Partner Program · dontblink', 'Earn a share of every launch and trade you bring to dontblink — paid on-chain, in the same block.'],
   changelog: ['What’s new · dontblink', 'Release notes for dontblink — every feature, fix and speed-up we ship.'],
