@@ -25,11 +25,20 @@ jobs:
         run: |
           git config user.name 'boards-snapshot-bot'
           git config user.email 'xiaoa-ai001@users.noreply.github.com'
-          # tokenlist.json 是 seo.mjs 每轮都会重写的产物。它漏在这份白名单外，于是每轮都留一份
-          # 未暂存改动，下面的 git pull --rebase 直接拒绝执行（exit 128）——2026-08-17 16:0x
-          # 起整个 job 就是这么连续失败的：数据每轮都算对了、commit 也成功了，就是推不上去，
-          # 站上的代币列表因此冻了 27 小时（REBLINK / NiuLai 等新币全卡在没推出去的那个 commit 里）。
-          git add data/boards.json data/ours.json tokenlist.json sitemap.xml robots.txt 404.html t curve drop img explore launch fees bridge points
+          # **git add -A，不要再列白名单。**
+          #
+          # 这里原来是一串显式路径。它两次咬人：
+          #   1. seo.mjs 每轮重写 tokenlist.json，而它没在名单里 → 每轮都留一份未暂存改动
+          #      → git pull --rebase 拒绝执行 → 整个 job 挂掉。站上代币列表因此冻了 27 小时。
+          #   2. 名单里只有 explore/launch/fees/bridge/points 五个静态页，而 seo.mjs 实际生成
+          #      十三个。changelog、docs、treasury、partners、affiliate… 全部在 runner 上
+          #      生成完就被丢掉 —— /changelog 深链接因此一直加载几个版本之前的 bundle，
+          #      发了新公告也看不见。
+          #
+          # 第 2 条更阴：加上 --autostash 之后它连 job 都不会挂了，改动被静默 stash 掉，
+          # 日志一片绿。白名单和脚本产物之间没有任何机制保证同步，迟早再次漂移。
+          # 这个仓库在 runner 上的全部内容非 checkout 即脚本产物，直接全量 add 才是对的。
+          git add -A
           git diff --cached --quiet && echo 'no change' && exit 0
           git commit -m 'data: boards snapshot'
           # --autostash：万一以后哪个脚本又写了白名单之外的文件，rebase 会自动把它收起来再放回去，
