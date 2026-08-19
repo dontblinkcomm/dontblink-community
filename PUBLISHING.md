@@ -11,25 +11,39 @@
 
 根因不是手滑，是流程必然：**多个源码树各自构建整站，谁后发谁的 bundle 就是全站。**
 
-## 所以发布前必须做这一步：确认「只增不减」
+## 所以发布前必须做这一步：资产清单比对（少一个 chunk 就停）
+
+**不要用关键词比对。** 08-19 试过，它抓不到新增的东西：`/z500/onboard` 是**新**路由、
+门槛控件是页面内的一个控件 —— 线上 bundle 有、旧 bundle 没有，反向比对根本不会报。
+关键词比对只在"我知道该查什么"时有效，而那正是最不该依赖的前提。
+
+改成**文件级**：线上有的 chunk，本次构建必须都有。
 
 ```bash
-# 1) 抓线上现在跑的 bundle
-OLD=$(curl -s https://dontblink.community/ | grep -oE 'index-[A-Za-z0-9_-]+\.js' | head -1)
-curl -s "https://dontblink.community/assets/$OLD" -o /tmp/old.js
+WEB=<path-to>/ssi-launchpad-rh/web
 
-# 2) 我要发的 bundle
-NEW=$(grep -oE 'index-[A-Za-z0-9_-]+\.js' <WEB>/dist/index.html | head -1)
+# 1) 线上资产清单（从 index.html 递归取所有 chunk 名）
+curl -s https://dontblink.community/ -o /tmp/live.html
+LIVE_MAIN=$(grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' /tmp/live.html | head -1)
+curl -s "https://dontblink.community/$LIVE_MAIN" -o /tmp/live-main.js
+# 主 chunk 里引用的其它 chunk（Vite 用相对路径 import）
+grep -oE '"\./[A-Za-z0-9_-]+-[A-Za-z0-9_-]+\.js"' /tmp/live-main.js \
+  | tr -d '"./' | sort -u > /tmp/live-chunks.txt
+grep -oE 'assets/[A-Za-z0-9_-]+-[A-Za-z0-9_-]+\.js' /tmp/live.html \
+  | sed 's|assets/||' | sort -u >> /tmp/live-chunks.txt
 
-# 3) 逐个查线上有、我没有的路由/板块
-for k in z500 bridge affiliate treasury points curve drop claim fees explore changelog; do
-  o=$(grep -c "$k" /tmp/old.js); n=$(grep -c "$k" "<WEB>/dist/assets/$NEW")
-  [ "$o" -gt 0 ] && [ "$n" -eq 0 ] && echo "❌ 线上有 $k，我的构建没有 —— 停，别发"
-done
+# 2) 本次构建的清单（按 chunk 名去掉 hash 比对，hash 每次都变）
+ls "$WEB/dist/assets/" | grep '\.js$' | sed -E 's/-[A-Za-z0-9_-]{8}\.js$//' | sort -u > /tmp/new-names.txt
+sed -E 's/-[A-Za-z0-9_-]{8}\.js$//' /tmp/live-chunks.txt | sort -u > /tmp/live-names.txt
+
+# 3) 线上有、本次构建没有的 —— 一个都不该有
+comm -23 /tmp/live-names.txt /tmp/new-names.txt
 ```
 
-**只要命中一条就停下。** 命中意味着：你的源码树不是唯一发布源，直接发会删掉别人的东西。
-这时应该先搞清那部分功能从哪来，合进来之后再发。
+**输出非空就停下。** 每一行都是一个你即将从线上删掉的页面/功能。
+
+停下之后要做的不是"想办法绕过检查"，而是搞清那个 chunk 从哪来 ——
+**大概率是对方手上有还没推上 origin 的提交**（08-19 两次事故都是这个形状）。
 
 ## 发布前打个招呼
 
@@ -67,3 +81,23 @@ done
 ```
 
 08-19 那次差点丢掉一个未推的 legacy 提交，是查了文件才发现内容其实已在远端。
+
+## 最根本的一条：推完自己确认，别信返回码
+
+08-19 两次事故的共同点：**双方都把 `origin` 当成了对方的真相，而 origin 两次都是过时的。**
+
+一次是合并了 `origin/feat/z500-bsc`，但对方最新的提交还在他本地；
+一次是我以为 `git push` 成功了 —— 它返回 0、`&& echo "已推"` 也打印了，
+但 `origin/master` 根本没变。
+
+根因是配置：`push.default = upstream`，而 `master` 的 upstream 被配成了 `origin/main`。
+于是 `git push origin master` 推的是 `main`（本来就最新）→ 报 `Everything up-to-date`。
+
+**所以推完必须问 GitHub，不是看返回码：**
+
+```bash
+git push origin <branch>:refs/heads/<branch>     # 用完整 refspec，绕开 push.default
+git ls-remote origin <branch>                    # 权威，和本地 rev-parse 对一遍
+```
+
+同理，合并别人的分支之前，先跟对方确认 `origin` 上那条是不是他的最新。
