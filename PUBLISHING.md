@@ -130,3 +130,34 @@ git ls-remote origin <branch>                    # 权威，和本地 rev-parse 
 ```
 
 同理，合并别人的分支之前，先跟对方确认 `origin` 上那条是不是他的最新。
+
+## 报成功比报失败更危险 —— 这条要不对称地对待
+
+08-19 一天里，三次"工具说成功、事实并非如此"：
+
+| 工具说 | 事实 |
+|---|---|
+| `git push` 退出码 0、`&& echo "已推"` 也打印了 | `origin/master` 纹丝不动（`push.default=upstream` 把它推去了 `origin/main`） |
+| `npm run build` 打印 `✓ built in 1.27s` | `tsc` 从没跑过（`.bin/tsc` 是个自指坏软链，`npx` 把"找不到"变成静默成功） |
+| `git commit` 成功、文件确实改了 | 改的是**另一个仓**，站点源码那边什么都没发生 |
+
+还有反方向的一次：BSC 的 `publicnode` 拒绝 `eth_getTransactionReceipt`
+（"Archive requests require a personal token"，哪怕交易是几秒前的），
+于是**成功的部署被判成失败**，重跑差点重复部署。
+
+**所以这条习惯是不对称的：**
+
+- **报失败时**，可以先怀疑工具 —— 换个 RPC、换个命令再确认一次，别急着重跑有副作用的操作
+- **报成功时**，必须去问最终事实 —— 失败会逼人去看，成功不会
+
+**"问最终事实"的具体做法**：
+
+```bash
+git ls-remote origin <branch>          # 问 GitHub，不看 push 的退出码
+cast code <addr> --rpc-url <rpc>       # 问链，不看部署脚本的输出
+test -f dist/index.html && ls -la      # 看产物本身，不看 "✓ built"
+./node_modules/.bin/<tool> --version   # 直接调，不走 npx（且不要加管道，管道会吞退出码）
+```
+
+**尤其注意管道**：`cmd | head` 之后 `$?` 是 `head` 的退出码，永远是 0。
+要判断成败就别接管道，或者用 `${PIPESTATUS[0]}`。
