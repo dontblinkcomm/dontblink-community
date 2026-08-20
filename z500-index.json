@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "at": 1787219149,
+  "chainId": 56,
+  "cursor": "117008347",
+  "taxReceipts": [
+    {
+      "tx": "0x6b1b1cbb16a3224b5b64d641e3e057d740bf9fc7b6f96bc8d82b3e7ecb24c1a5",
+      "log_index": 200,
+      "clone": "0x707811f1B5242d138aFce6d6903FD81B9683d893",
+      "block": 116993796,
+      "ts": 1787208014,
+      "asset": "0x0000000000000000000000000000000000000000",
+      "amount": "875085953169100"
+    },
+    {
+      "tx": "0x1792493f155037ed7670f0261dc368d72079110d19ff1a226d6a6cebda5474c2",
+      "log_index": 441,
+      "clone": "0x707811f1B5242d138aFce6d6903FD81B9683d893",
+      "block": 116963954,
+      "ts": 1787194582,
+      "asset": "0x0000000000000000000000000000000000000000",
+      "amount": "654282153496555"
+    },
+    {
+      "tx": "0xa5fe312fed019e65bf072c3b055006caaa16111b792a1abce5956aecdc1675d6",
+      "log_index": 19,
+      "clone": "0x707811f1B5242d138aFce6d6903FD81B9683d893",
+      "block": 116957265,
+      "ts": 1787191571,
+      "asset": "0x0000000000000000000000000000000000000000",
+      "amount": "2533107986638894"
+    }
+  ],
+  "buybacks": [],
+  "clones": [
+    {
+      "clone": "0x707811f1B5242d138aFce6d6903FD81B9683d893",
+      "network_token": "0x7b630F080807DF83908b4aDE46BA6396EE66b098",
+      "sub_token": "0x18B6065611b41a81700cC999F8feE0caa7F5FFff",
+      "vault": "0xfdE0C1B48E7678b4c54fCCe65Bd368981Dc089c3",
+      "owner": "0xbd413EA580C40AC39C559c6010a3E771E9cC1845",
+      "distributor": "0xf555Cf7490358805b72B56B66C0c315D00645d04",
+      "burn_bps": 5000,
+      "creator_bps": 500,
+      "sub_holder_bps": 0,
+      "badge": 0,
+      "vetoed": 0,
+      "verified": 1,
+      "meta_uri": "data:application/json;base64,eyJuYW1lIjoiYmxpbmsgdGVzdCBvbmUiLCJsb2dvIjoiaHR0cHM6Ly9zdGF0aWMuZm91ci5tZW1lL21hcmtldC84MjBCNUQyRHF1UUlNLnBuZyIsIngiOiJkb250YmxpbmtfY3RvIiwid2Vic2l0ZSI6Imh0dHBzOi8vZG9udGJsaW5rLmNvbW11bml0eS96NTAwIiwiZGVzYyI6IkZpcnN0IGNvaW4gbGF1bmNoZWQgaW50byB0aGUgZG9udGJsaW5rIGluZGV4IOKAlCBhIGxpdmUgZW5kLXRvLWVuZCB0ZXN0IG9mIHRoZSB6NTAwIHBpcGVsaW5lIG9uIEJTQy4ifQ==",
+      "block": 116957254,
+      "ts": 1787191566,
+      "tx": "0x4e10b1e44baa71a07399e504cfd5dfa334a55e2b462783d25a13f060f0550c6c",
+      "meta_name": "blink test one",
+      "meta_logo": "https://static.four.meme/market/820B5D2DquQIM.png",
+      "meta_x": "dontblink_cto",
+      "meta_website": "https://dontblink.community/z500",
+      "meta_desc": "First coin launched into the dontblink index — a live end-to-end test of the z500 pipeline on BSC.",
+      "meta_telegram": null,
+      "pending_quote": "0",
+      "pending_at": 1787214638,
+      "auto_paused": 0
+    }
+  ]
+}
