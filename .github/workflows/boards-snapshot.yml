@@ -49,4 +49,16 @@ jobs:
           # 快照类数据没有"合并"的语义，最后跑完的那份就是最新的，直接让它覆盖。
           # （rebase 期间 theirs = 正在重放的我方提交，也就是本轮新生成的快照。）
           git pull --rebase --autostash -X theirs origin main
+          # **rebase 之后必须再生成一次。** 上面那次 seo.mjs 用的模板是 checkout 那一刻的
+          # index.html，而这个 job 中间要跑好几分钟的链上扫描和行情（08-20 那轮 11:03:24 开始、
+          # 11:11:25 才推）。这期间只要发布过一次（那轮是 11:07:31），刚 pull 进来的 index.html
+          # 就已经是新哈希了，而我们手里这 1038 个页面还钉着旧的 —— 它们照样 200，因为发布侧
+          # 故意不带 --delete，旧 assets 还在。于是分享链接打开的是几个版本之前的 App，不报错。
+          #
+          # 上面那个 -X theirs 让这件事更糟：撞车时优先我方，也就是优先这一份**过期的**模板。
+          # 重新生成一次就与谁赢无关了 —— 判据变成「以最终会被推上去的那份 index.html 为准」。
+          # 脚本是 (index.html, data/ours.json) 的纯函数、不联网、0.3 秒，重跑没有代价。
+          node scripts/seo.mjs
+          git add -A
+          git diff --cached --quiet || git commit --amend --no-edit
           git push origin main
