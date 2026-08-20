@@ -111,6 +111,42 @@ git ls-remote origin | grep -q "$(git rev-parse HEAD)" \
 停下之后要做的不是"想办法绕过检查"，而是搞清那个 chunk 从哪来 ——
 **大概率是对方手上有还没推上 origin 的提交**（08-19 两次事故都是这个形状）。
 
+
+## 清单比对拦不住的那一类：被摊进多个 chunk 的板块
+
+**2026-08-19 发布 v2.7 时发现的盲区。** z500 板块在源码里是 `web/src/z500/`（29 个文件），
+但 rollup 把它**摊进了 13 个别的 chunk**（`Coin` / `CommunityPage` / `Index` / `Claim` / `Launch` …），
+**产物里从来不存在名字带 z500 的 chunk**。
+
+直接后果：**资产清单比对（线上 chunk 名一个不少）永远看不见 z500。**
+上一次事故之所以能被清单检查抓到，是因为丢的是 `CommunityPage` 这种**有独立名字**的 chunk。
+如果哪天丢的只是 z500 的路由、而那 13 个 chunk 名都还在，清单比对会**安静放行**。
+
+所以在清单比对之外，再加一层**路由级**验证——直接问线上的 bundle 要路径字符串：
+
+```bash
+LM=$(curl -s https://dontblink.community/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1)
+curl -s "https://dontblink.community/$LM" -o /tmp/live-main.js
+grep -oh '/z500[a-z/]*' /tmp/live-main.js | sort -u
+```
+
+**发布前后各跑一次，路由条数只能增不能减。** 2026-08-19 实测线上 10 条：
+`/z500` `/z500/` `/z500/c/` `/z500/claim` `/z500/coin/` `/z500/launch`
+`/z500/members` `/z500/onboard` `/z500/safe/` `/z500/vaults`
+
+**通用形式**：任何"一个板块的代码被打散进多个 chunk"的情况，都要找一个
+**不随打包方式变化的指纹**去验——路由路径是最好用的一个，它是产品事实，不是构建产物的形状。
+
+## 别用管道判断成败
+
+`forge test … | grep '^\[FAIL'` 这种写法会把**编译错误和退出码一起吃掉**——
+命令根本没跑起来，输出是空的，看起来和"全过"一模一样。08-19 踩过一次。
+
+```bash
+cmd > /tmp/out.log 2>&1; echo "退出码: $?"   # 先看退出码
+grep -E '^\[FAIL' /tmp/out.log              # 再去文件里找
+```
+
 ## 发布前打个招呼
 
 多个会话同时在的时候，发布前用 `SendMessage` 通知对方。收到的一方如果手上有未发布的
