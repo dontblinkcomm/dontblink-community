@@ -65,29 +65,60 @@ const queue = pools
   .slice(0, BATCH)
 
 let ok = 0
-let rateLimited = false
+let zeroed = 0
 /** **跳过的原因要数出来。** 只报「刷新 0/8」的话，没人分得清是 GT 限流、是这批池子真的
  *  没成交过、还是我把地址拼错了 —— 三种情况要做的事完全不同，而它们在日志里长得一样。 */
 const why = {}
 const note = (k) => { why[k] = (why[k] ?? 0) + 1 }
+
+/**
+ * **429 要重试这一个池子，不能因此放弃整轮。**
+ *
+ * 2026-08-28 在 muse-mini 上实测：间隔 2s/4s/6s 三档，429 的比例分别是 4/10、5/10、3/10 ——
+ * 和速率**没有关系**，它是随机的（共享出口 IP 被整体限流）。而第一版是「一撞 429 就 break」，
+ * 于是每轮只能刷到五六个池子，1057 个要两百轮才扫得完。
+ *
+ * 改成每个池子最多试 3 次、每次退避加倍；只有连着 8 个池子全军覆没才判定 GT 整个不可用、
+ * 提前收工 —— 那时候继续打也是白打。
+ */
+const MAX_TRY = 3
+let consecutiveFail = 0
+let giveUp = false
+
 for (const { p } of queue) {
-  if (rateLimited) break
-  try {
-    const r = await fetch(`${GT}/pools/${p}/ohlcv/day?limit=1000`, { headers: { accept: 'application/json' } })
-    if (r.status === 429) { rateLimited = true; break }
-    const txt = await r.text()
-    let j = null
-    try { j = JSON.parse(txt) } catch { note(`HTTP${r.status} 非JSON`); await sleep(GAP_MS); continue }
-    const rows = j?.data?.attributes?.ohlcv_list
-    // **空数组不等于「这个池子没成交过」。** 同一个池子实测第一次返回 0 根、第二次 20 根 ——
-    // 把空当成 0 写进去，就等于把一次读取失败固化成一个事实。留着不动，下一轮再来。
-    if (!Array.isArray(rows)) { note(`HTTP${r.status} ${String(j?.errors?.[0]?.title ?? j?.error ?? '无 ohlcv_list').slice(0, 40)}`); await sleep(GAP_MS); continue }
-    if (rows.length === 0) { note('K线为空'); await sleep(GAP_MS); continue }
-    const v = rows.reduce((s, x) => s + (Number(x?.[5]) || 0), 0)
-    store[p] = { v, days: rows.length, at: now }
-    ok++
-  } catch (e) {
-    note('THROW ' + String(e?.message ?? e).slice(0, 40))
+  if (giveUp) break
+  let done = false
+  for (let attempt = 1; attempt <= MAX_TRY && !done; attempt++) {
+    try {
+      const r = await fetch(`${GT}/pools/${p}/ohlcv/day?limit=1000`, { headers: { accept: 'application/json' } })
+      if (r.status === 429) { await sleep(GAP_MS * attempt * 2); continue }
+      // **404 = GT 里没有这个池子的记录 = 它没有可读的 DEX 成交，记 0 并算作已覆盖。**
+      // 不这么做的话，那 1041 个早就没人碰的 v1 池永远进不了 covered，覆盖率卡在个位数，
+      // 而前端那道「覆盖率不到 80% 就别改口径」的闸就永远打不开 —— 功能等于没上。
+      // 记 `no: true` 是为了以后想重查时分得出「查过是 0」和「真有 0 成交」。
+      if (r.status === 404) { store[p] = { v: 0, days: 0, at: now, no: true }; zeroed++; done = true; break }
+      const txt = await r.text()
+      let j = null
+      try { j = JSON.parse(txt) } catch { note(`HTTP${r.status} 非JSON`); break }
+      const rows = j?.data?.attributes?.ohlcv_list
+      if (!Array.isArray(rows)) { note(`HTTP${r.status} ${String(j?.errors?.[0]?.title ?? j?.error ?? '无 ohlcv_list').slice(0, 40)}`); break }
+      // **空数组不等于「这个池子没成交过」。** 同一个池子实测第一次返回 0 根、第二次 20 根 ——
+      // 把空当成 0 写进去，就等于把一次读取失败固化成一个事实。留着不动，下一轮再来。
+      if (rows.length === 0) { note('K线为空'); break }
+      const v = rows.reduce((s, x) => s + (Number(x?.[5]) || 0), 0)
+      store[p] = { v, days: rows.length, at: now }
+      ok++
+      done = true
+    } catch (e) {
+      note('THROW ' + String(e?.message ?? e).slice(0, 40))
+      break
+    }
+  }
+  if (done) consecutiveFail = 0
+  else {
+    consecutiveFail++
+    note('三次都限流')
+    if (consecutiveFail >= 8) { giveUp = true; note('连续 8 个全失败,判定 GT 不可用,提前收工') }
   }
   await sleep(GAP_MS)
 }
@@ -103,7 +134,7 @@ await mkdir('data', { recursive: true })
 await writeFile(OUT, JSON.stringify({ at: now, totalUsd, covered, known: pools.length, pools: kept }))
 
 console.log(
-  `volume-all: 本轮刷新 ${ok}/${queue.length}${rateLimited ? '（被 GT 限流，提前收工）' : ''}；` +
-  `已覆盖 ${covered}/${pools.length} 个池子；合计 $${totalUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
+  `volume-all: 本轮刷新 ${ok}/${queue.length}${giveUp ? '（GT 连续失败，提前收工）' : ''}；` +
+  `其中 ${zeroed} 个 GT 查无此池(记 0)；已覆盖 ${covered}/${pools.length}；合计 $${totalUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
 )
 for (const [k, n] of Object.entries(why).sort((a, b) => b[1] - a[1])) console.log(`  跳过 ${n} 个：${k}`)
