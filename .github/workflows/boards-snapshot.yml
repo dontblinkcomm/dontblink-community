@@ -3,8 +3,19 @@
 # at 10 min or slower.
 name: boards-snapshot
 on:
-  schedule:
-    - cron: '*/10 * * * *'
+  # **定时已停用(2026-08-28),这个仓的数据现在由 muse-mini 上的 cron 写。**
+  #
+  # 停用的原因不是 GitHub 有问题,是这个 job 本身:单次运行中位 8.7 分钟,和它自己配的
+  # 10 分钟间隔一样长,加上 concurrency 不取消,排队的定时运行被 GitHub 丢弃。实测中位
+  # 间隔 126 分钟、最长 2071 分钟(34 小时)—— 站点的币列表和行情因此长期停在一天前,
+  # 而没有任何地方会说出来。
+  #
+  # **同一份产物只能有一个写入者。** 两边都定时的话,谁覆盖谁取决于时序,而且两边
+  # 都不会报错。muse-mini 那边:/etc/cron.d/dbc-snapshot,脚本 /opt/dbc/run.sh。
+  #
+  # workflow_dispatch 保留:muse-mini 挂了的时候手点一下仍然能出一份数据。
+  # schedule:
+  #   - cron: '*/10 * * * *'
   workflow_dispatch:
 permissions:
   contents: write
