@@ -17,9 +17,18 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises'
 // 基址可覆盖:CI 上直连 GT,本地开发机出不了 GT 的网,用我们自己的代理跑一遍验管线。
 const GT = (process.env.GT_BASE || 'https://api.geckoterminal.com/api/v2') + '/networks/robinhood'
 const OUT = 'data/volume-all.json'
-/** 每轮刷多少个。60 × 每小时 6 轮 = 360 次/小时，远低于 GT 免费档，而全量扫一遍约 3 小时。 */
+/**
+ * 每轮刷多少个，以及每次之间隔多久。
+ *
+ * **2 秒不是随手写的:GT 免费档是 30 次/分钟。** 第一版写 1.2 秒 = 50 次/分钟，
+ * 那是在自己把自己限流，然后所有池子都记成「读不到」。
+ *
+ * 这个 cron 名义上每 10 分钟一轮，**实测中位间隔 126 分钟**(单次运行 8.7 分钟，
+ * 和调度间隔一样长，加上 concurrency 不取消，排队的定时运行被 GitHub 丢掉)。
+ * 所以每轮多花两分钟不是问题，扫不完也不要紧 —— covered/known 会把「还没扫完」说出来。
+ */
 const BATCH = Number(process.env.VOL_BATCH || 60)
-const GAP_MS = Number(process.env.VOL_GAP_MS || 1200)
+const GAP_MS = Number(process.env.VOL_GAP_MS || 2000)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const readJson = async (p, fallback) => {
@@ -27,7 +36,14 @@ const readJson = async (p, fallback) => {
 }
 
 const ours = await readJson('data/ours.json', { tokens: [] })
-const pools = [...new Set((ours.tokens ?? []).map((t) => t.pool).filter(Boolean).map((p) => p.toLowerCase()))]
+/** pool → 24h 成交量。第一轮拿它排序，让大池子先落地。 */
+const vol24 = new Map()
+for (const t of ours.tokens ?? []) {
+  if (!t.pool) continue
+  const k = t.pool.toLowerCase()
+  vol24.set(k, Math.max(vol24.get(k) ?? 0, Number(t.gt?.vol) || 0))
+}
+const pools = [...vol24.keys()]
 if (pools.length === 0) {
   console.log('ours.json 里一个池子都没有 —— 不动 volume-all.json')
   process.exit(0)
@@ -38,10 +54,14 @@ const store = { ...(prev.pools ?? {}) }
 
 // 先刷从来没读过的，再刷最久没刷的。**不要随机挑** —— 随机挑会让某些池子长期抽不到，
 // 而它们恰好可能是量最大的那几个。
+//
+// **没读过的那批之间，按 24h 成交量从大到小。** 全量扫完要十几轮(见上面的间隔实测)，
+// 这期间首页显示的是一个带 `≥` 的下限。任意顺序意味着那个下限可能长时间明显偏低；
+// 按量排序则让它第一轮就接近真值，后面只是慢慢补齐尾巴。
 const now = Date.now()
 const queue = pools
-  .map((p) => ({ p, at: store[p]?.at ?? 0 }))
-  .sort((a, b) => a.at - b.at)
+  .map((p) => ({ p, at: store[p]?.at ?? 0, v: vol24.get(p) ?? 0 }))
+  .sort((a, b) => (a.at - b.at) || (b.v - a.v))
   .slice(0, BATCH)
 
 let ok = 0
