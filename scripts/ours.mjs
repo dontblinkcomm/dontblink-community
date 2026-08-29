@@ -94,6 +94,8 @@ function slimGt(g) {
 }
 for (const t of prev?.tokens ?? []) if (t.gt) t.gt = slimGt(t.gt)
 const prevByToken = new Map((prev?.tokens ?? []).map((t) => [t.token, t]))
+/** 链上扫描有没有失败过。**失败时绝不能用残缺的列表覆盖上一版。** */
+let scanFailed = false
 
 // ---- v1：存档 + 增量 ----
 const archive = await readFile('legacy/dontblink-family/tokens.json', 'utf8').then((t) => JSON.parse(t)).catch(() => [])
@@ -147,6 +149,7 @@ try {
   }
   console.log(`v1 incremental: +${logs.length}`)
 } catch (e) {
+  scanFailed = true
   console.log('v1 incremental scan failed, keeping archive only:', String(e).slice(0, 120))
 }
 
@@ -181,6 +184,7 @@ try {
     if (img) v2Images.set(addr(lg.topics[1]), img)
   }
 } catch (e) {
+  scanFailed = true
   console.log('v2 metadata scan failed:', String(e).slice(0, 120))
 }
 try {
@@ -204,6 +208,7 @@ try {
   }
   console.log(`v2: ${logs.length} launches, ${v2Images.size} with image`)
 } catch (e) {
+  scanFailed = true
   console.log('v2 scan failed:', String(e).slice(0, 120))
 }
 
@@ -411,7 +416,31 @@ const SUPERSEDED = new Set([
   '0xc11788e9e7199c662813574ab7e2018dd27c4d01', // DONTBLINK Drop → 0x4C7E…7dbdb
   '0x1635df31006e4b1020b27a548d6c614960e1dbdb', // DONTBLINK Vault 误绑 @dontblinkfamily（前团队号）→ 0x4e95…f0DbDb 绑 @dontblink_cto
 ])
+// **扫描失败过就把上一版里缺掉的补回来。**
+//
+// 2026-08-28 实测:Robinhood RPC 回 `Too Many Requests`,三个链上扫描全挂,
+// 而 v1 只剩静态存档的 999 枚、v2 一枚不剩 —— 脚本照样把这份残缺列表写出去并发布,
+// 站点因此少了 60 枚币(包括全部 v2,也就是我们现在真正在发的那些),一句报错都没有。
+//
+// 扫描失败的意思是「这一轮我们没看清」,不是「这些币没了」。上一版是我们看清过的,
+// 拿它补上;下一轮扫描成功时自然会覆盖回来。
+if (scanFailed) {
+  let restored = 0
+  for (const t of prev?.tokens ?? []) {
+    const key = String(t.token ?? '').toLowerCase()
+    if (key && !tokens.has(key)) { tokens.set(key, t); restored++ }
+  }
+  console.log(`链上扫描失败,从上一版补回 ${restored} 枚 —— 不用残缺的覆盖完整的`)
+}
+
 const list = [...tokens.values()].filter((t) => !SUPERSEDED.has(t.token)).sort((a, b) => b.createdBlock - a.createdBlock)
+
+// 最后一道闸:扫描失败时列表**不许比上一版短**。补回逻辑应该已经保证了这一点,
+// 但这个判断是免费的,而它挡住的是「站上少了几十枚币」这种没人会立刻发现的事故。
+if (scanFailed && prev?.tokens?.length && list.length < prev.tokens.length) {
+  console.log(`拒绝写入:扫描失败且列表从 ${prev.tokens.length} 缩到 ${list.length},保留上一版`)
+  process.exit(0)
+}
 await mkdir('data', { recursive: true })
 await writeFile('data/ours.json', JSON.stringify({ at: fresh > 0 ? Date.now() : (prev?.at ?? Date.now()), tokens: list }))
 console.log(`ours.json written: ${list.length} tokens`)
