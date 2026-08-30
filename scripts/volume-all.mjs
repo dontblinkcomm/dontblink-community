@@ -28,6 +28,18 @@ const OUT = 'data/volume-all.json'
  * 所以每轮多花两分钟不是问题，扫不完也不要紧 —— covered/known 会把「还没扫完」说出来。
  */
 const GAP_MS = Number(process.env.VOL_GAP_MS || 2000)
+/**
+ * **一轮最多跑多久。按时间封顶,不是按个数。**
+ *
+ * 只按个数封顶算不准:每个池子最多重试 3 次、退避 2s+4s,再加 2 秒间隔 ——
+ * 220 个的最坏情况是 44 分钟,而 cron 每 30 分钟一轮。实测一轮跑了 24 分钟还没完,
+ * 下一轮会被 flock 挡掉,等于白排一次。
+ *
+ * 12 分钟:留足余量给 30 分钟的间隔,而扫不完不是问题 —— 下一轮从最久没刷的接着扫,
+ * 覆盖率照样往上走,只是慢一点。
+ */
+const MAX_MS = Number(process.env.VOL_MAX_MS || 12 * 60_000)
+const startedAt = Date.now()
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const readJson = async (p, fallback) => {
@@ -99,8 +111,10 @@ const MAX_TRY = 3
 let consecutiveFail = 0
 let giveUp = false
 
+let timedOut = false
 for (const { p } of queue) {
   if (giveUp) break
+  if (Date.now() - startedAt > MAX_MS) { timedOut = true; break }
   let done = false
   for (let attempt = 1; attempt <= MAX_TRY && !done; attempt++) {
     try {
@@ -172,7 +186,7 @@ await mkdir('data', { recursive: true })
 await writeFile(OUT, JSON.stringify({ at: now, totalUsd, covered, known: pools.length, pools: kept }))
 
 console.log(
-  `volume-all: 本轮刷新 ${ok}/${queue.length}${giveUp ? '（GT 连续失败，提前收工）' : ''}；` +
+  `volume-all: 本轮刷新 ${ok}/${queue.length}${giveUp ? '（GT 连续失败，提前收工）' : timedOut ? `（跑满 ${Math.round(MAX_MS / 60000)} 分钟,收工）` : ''}；` +
   `其中 ${zeroed} 个 GT 查无此池(记 0)；已覆盖 ${covered}/${pools.length}；合计 $${totalUsd.toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
 )
 for (const [k, n] of Object.entries(why).sort((a, b) => b[1] - a[1])) console.log(`  跳过 ${n} 个：${k}`)
