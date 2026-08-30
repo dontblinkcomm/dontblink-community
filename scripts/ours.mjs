@@ -368,7 +368,16 @@ console.log(`GT: fresh ${fresh}, failed ${failed}, pools ${withPool.length}, no-
 // v2 是首页在看的那一批。它要是没拿满，说明连第 1 批都被限流了，属于要立刻处理的情况。
 console.log(`GT v2: ${v2Fresh}/${v2Pools.length} fresh`)
 if (v2Pools.length && v2Fresh < v2Pools.length) {
-  console.log('WARNING: 有 v2 币没拿到新行情 —— 首页会显示过期价格')
+  // **说出是哪一枚。** 原来只说「有 v2 币没拿到新行情」—— 十六枚里哪一枚?
+  // 一条不说清对象的告警,只会训练人忽略所有告警;而它一旦每轮都响,
+  // 真正该响的那次也会被一起忽略掉。带上符号和它的价有多旧,才谈得上处理。
+  const stale = v2Pools
+    .filter((t) => (t.gt?.pAt ?? 0) < RUN_START)
+    .map((t) => {
+      const ageH = t.gt?.pAt ? ((RUN_START - t.gt.pAt) / 3600_000).toFixed(1) + 'h' : '从没抓到过'
+      return `${t.symbol ?? t.token.slice(0, 8)}(${ageH})`
+    })
+  console.log(`WARNING: ${stale.length} 枚 v2 币没拿到新行情,首页会显示过期价格 —— ${stale.join(', ')}`)
 }
 
 // ---- 内盘（bonding curve）行情：GT 索引不到，自己从合约算 ----
