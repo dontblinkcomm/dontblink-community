@@ -363,16 +363,27 @@ const v2Pools = withPool.filter(isV2)
 // 实测:整轮 fresh 1053 / failed 0,它却报 `GT v2: 0/16 fresh` 并触发告警。
 // **一个永远会响的告警,比没有告警更糟** —— 它会把真正该响的那次一起淹掉。
 // 用 pAt(这一轮抓到价时写的时间戳)按值判,和对象怎么复用无关。
-const v2Fresh = v2Pools.filter((t) => (t.gt?.pAt ?? 0) >= RUN_START).length
+/**
+ * **问的是「它的价旧不旧」,不是「这一轮有没有刷到它」。**
+ *
+ * 第一版判 `pAt >= RUN_START`。一说出名字就露馅了:它把一串 **6 分钟前**刚刷过的币
+ * 报成「没拿到新行情」—— 因为这一轮没轮到它们。那不是故障,是正常的批次轮转。
+ *
+ * 首页展示的是价格本身,不是"刷新动作",所以门槛该按价格年龄定。两小时:
+ * cron 每小时一轮,连着两轮没轮到才值得说一句。
+ */
+const V2_STALE_MS = 2 * 3600_000
+const v2Stale = (t) => (RUN_START - (t.gt?.pAt ?? 0)) > V2_STALE_MS
+const v2Fresh = v2Pools.filter((t) => !v2Stale(t)).length
 console.log(`GT: fresh ${fresh}, failed ${failed}, pools ${withPool.length}, no-pool ${tokens.size - withPool.length}`)
 // v2 是首页在看的那一批。它要是没拿满，说明连第 1 批都被限流了，属于要立刻处理的情况。
-console.log(`GT v2: ${v2Fresh}/${v2Pools.length} fresh`)
+console.log(`GT v2: ${v2Fresh}/${v2Pools.length} 的价在 2 小时内`)
 if (v2Pools.length && v2Fresh < v2Pools.length) {
   // **说出是哪一枚。** 原来只说「有 v2 币没拿到新行情」—— 十六枚里哪一枚?
   // 一条不说清对象的告警,只会训练人忽略所有告警;而它一旦每轮都响,
   // 真正该响的那次也会被一起忽略掉。带上符号和它的价有多旧,才谈得上处理。
   const stale = v2Pools
-    .filter((t) => (t.gt?.pAt ?? 0) < RUN_START)
+    .filter(v2Stale)
     .map((t) => {
       const ageH = t.gt?.pAt ? ((RUN_START - t.gt.pAt) / 3600_000).toFixed(1) + 'h' : '从没抓到过'
       return `${t.symbol ?? t.token.slice(0, 8)}(${ageH})`
