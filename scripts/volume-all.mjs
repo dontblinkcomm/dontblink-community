@@ -115,6 +115,8 @@ let timedOut = false
 for (const { p } of queue) {
   if (giveUp) break
   if (Date.now() - startedAt > MAX_MS) { timedOut = true; break }
+  /** 这个池子是不是「200 但空 K 线」。是的话它没消耗多少配额,间隔可以短一点。 */
+  let emptyFast = false
   let done = false
   for (let attempt = 1; attempt <= MAX_TRY && !done; attempt++) {
     try {
@@ -139,11 +141,15 @@ for (const { p } of queue) {
         //
         // 试满 3 次仍然空就记 0 并计入覆盖(带 empty 标记,以后想重查分得出来)。
         // 单次空有可能是抖动(同一个池子见过第一次 0 根、第二次 20 根),所以不是一次就定。
+        // **两次,不是三次。** 三次是我当初拍的:见过同一个池子第一次 0 根、第二次 20 根,
+        // 所以不敢一次就定。但两次同样挡得住那种抖动,而工作量少三分之一 ——
+        // 实测剩下的 244 个池子**全部**是这一类,每多一轮就是 244 × (2 秒间隔 + 一次往返)。
         const tries = (store[p]?.emptyTries ?? 0) + 1
-        if (tries >= 3) { store[p] = { v: 0, days: 0, at: now, empty: true }; zeroed++ }
+        if (tries >= 2) { store[p] = { v: 0, days: 0, at: now, empty: true }; zeroed++ }
         else { store[p] = { ...(store[p] ?? {}), emptyTries: tries, at: now - 6 * 3600_000 } }
-        note(tries >= 3 ? 'K线连续三次为空,记 0' : 'K线为空(下轮再试)')
+        note(tries >= 2 ? 'K线连续两次为空,记 0' : 'K线为空(下轮再试)')
         done = true
+        emptyFast = true   // 空响应没把配额打满,不用等满一个间隔
         break
       }
       const v = rows.reduce((s, x) => s + (Number(x?.[5]) || 0), 0)
@@ -168,7 +174,7 @@ for (const { p } of queue) {
     note('三次都限流')
     if (consecutiveFail >= 8) { giveUp = true; note('连续 8 个全失败,判定 GT 不可用,提前收工') }
   }
-  await sleep(GAP_MS)
+  await sleep(emptyFast ? Math.min(400, GAP_MS) : GAP_MS)
 }
 
 // **只数「有值的」,不数「有条目的」。**
