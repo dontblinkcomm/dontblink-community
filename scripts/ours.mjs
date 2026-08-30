@@ -97,6 +97,35 @@ const prevByToken = new Map((prev?.tokens ?? []).map((t) => [t.token, t]))
 /** 链上扫描有没有失败过。**失败时绝不能用残缺的列表覆盖上一版。** */
 let scanFailed = false
 
+/**
+ * **扫描游标:记住上次扫到哪个区块,别每轮从头再来。**
+ *
+ * 改之前,四次发现用的 getLogs 每轮都从各自的起点扫到链头:v1 两次从 37,388,780、
+ * v2 两次从 38,269,916,而链头已经 48,800,000+。按 CHUNK=100,000 算,一次扫描 114 个请求,
+ * **四次就是 456 个 getLogs,每 30 分钟一遍** —— Robinhood 的 RPC 因此反复回
+ * `Too Many Requests`,而扫描一失败,币列表就会残缺(2026-08-28 站上两次丢掉 62 枚币)。
+ *
+ * 链头每小时走约 25,000 块,所以带游标之后每轮只需要一两个 chunk。
+ *
+ * **两条规矩:**
+ *   1. 只有扫描成功才推进游标。失败就留在原地,下一轮从同一个位置重来 ——
+ *      推进一个没扫成的区间,那段里的币就永远不会被发现,而且不会有任何迹象。
+ *   2. 每次回退 OVERLAP 个区块再扫。多扫一点是幂等的(token 以地址为键),
+ *      而少扫一点会漏币。
+ */
+const OVERLAP = 5_000
+const prevScan = prev?.scan ?? {}
+/** 上一轮之前发现的币要带过来 —— 不再每轮重扫历史,它们只存在于上一版里。
+ *  v2 的币**完全**靠链上扫描,不带过来就等于每轮都要重扫 1000 万块才能看见它们。 */
+const carryPrev = (tokens) => {
+  let n = 0
+  for (const t of prev?.tokens ?? []) {
+    const k = String(t.token ?? '').toLowerCase()
+    if (k && !tokens.has(k)) { tokens.set(k, t); n++ }
+  }
+  return n
+}
+
 // ---- v1：存档 + 增量 ----
 const archive = await readFile('legacy/dontblink-family/tokens.json', 'utf8').then((t) => JSON.parse(t)).catch(() => [])
 const tokens = new Map()
@@ -118,13 +147,17 @@ for (const t of archive) {
 const head = parseInt(await rpc('eth_blockNumber', []), 16)
 const archiveHead = Math.max(0, ...archive.map((t) => Number(t.createdBlock ?? 0)))
 console.log(`v1 archive: ${archive.length} tokens up to block ${archiveHead}; head=${head}`)
+console.log(`带过来上一版发现的 ${carryPrev(tokens)} 枚(游标 v1=${prevScan.v1 ?? '无'} v2=${prevScan.v2 ?? '无'})`)
+/** 从游标往回退一点开始;没有游标(首次)就退回全量,和改之前一样。 */
+const v1From = prevScan.v1 ? Math.max(archiveHead + 1, prevScan.v1 - OVERLAP) : archiveHead + 1
+let v1ScannedTo = null
 try {
-  const logs = await getLogs(V1_LAUNCHPAD, V1_TOPIC_CREATED, archiveHead + 1, head)
+  const logs = await getLogs(V1_LAUNCHPAD, V1_TOPIC_CREATED, v1From, head)
   // 存档之后新发的 v1 币没有本地图 —— 从 v1 的 LaunchMetadata 事件里取 imageURI（和 v2 同一个 topic）
   const v1Images = new Map()
   if (logs.length) {
     try {
-      for (const lg of await getLogs(V1_LAUNCHPAD, '0x81757bd4a3f7375c9021d3bd561d1a8075d765544734931f26896acacda7ccdc', archiveHead + 1, head)) {
+      for (const lg of await getLogs(V1_LAUNCHPAD, '0x81757bd4a3f7375c9021d3bd561d1a8075d765544734931f26896acacda7ccdc', v1From, head)) {
         const [imageURI] = abiStrings(lg.data, 5)
         const img = imageFromTokenURI(imageURI)
         if (img) v1Images.set(addr(lg.topics[1]), img)
@@ -147,7 +180,8 @@ try {
       createdAt: null,
     })
   }
-  console.log(`v1 incremental: +${logs.length}`)
+  v1ScannedTo = head   // **只有走到这里才算扫成功,游标才推进**
+  console.log(`v1 incremental: +${logs.length} (从 ${v1From})`)
 } catch (e) {
   scanFailed = true
   console.log('v1 incremental scan failed, keeping archive only:', String(e).slice(0, 120))
@@ -176,9 +210,11 @@ function imageFromTokenURI(uri) {
     return null
   }
 }
+const v2From = prevScan.v2 ? Math.max(V2_FROM_BLOCK, prevScan.v2 - OVERLAP) : V2_FROM_BLOCK
+let v2ScannedTo = null
 const v2Images = new Map()
 try {
-  for (const lg of await getLogs(V2_PORTAL, V2_TOPIC_META, V2_FROM_BLOCK, head)) {
+  for (const lg of await getLogs(V2_PORTAL, V2_TOPIC_META, v2From, head)) {
     const [imageURI] = abiStrings(lg.data, 5)
     const img = imageFromTokenURI(imageURI)
     if (img) v2Images.set(addr(lg.topics[1]), img)
@@ -188,7 +224,7 @@ try {
   console.log('v2 metadata scan failed:', String(e).slice(0, 120))
 }
 try {
-  const logs = await getLogs(V2_PORTAL, V2_TOPIC_LAUNCHED, V2_FROM_BLOCK, head)
+  const logs = await getLogs(V2_PORTAL, V2_TOPIC_LAUNCHED, v2From, head)
   for (const lg of logs) {
     const token = addr(lg.topics[2])
     const mode = MODE[parseInt(word(lg.data, 1), 16)] ?? 'instant'
@@ -206,7 +242,8 @@ try {
       createdAt: null,
     })
   }
-  console.log(`v2: ${logs.length} launches, ${v2Images.size} with image`)
+  v2ScannedTo = head   // 同上:扫成功才推进
+  console.log(`v2: ${logs.length} launches, ${v2Images.size} with image (从 ${v2From})`)
 } catch (e) {
   scanFailed = true
   console.log('v2 scan failed:', String(e).slice(0, 120))
@@ -442,5 +479,11 @@ if (scanFailed && prev?.tokens?.length && list.length < prev.tokens.length) {
   process.exit(0)
 }
 await mkdir('data', { recursive: true })
-await writeFile('data/ours.json', JSON.stringify({ at: fresh > 0 ? Date.now() : (prev?.at ?? Date.now()), tokens: list }))
+// 游标:扫成功的那条才前进,失败的沿用上一版的位置。
+const scan = {
+  v1: v1ScannedTo ?? prevScan.v1 ?? null,
+  v2: v2ScannedTo ?? prevScan.v2 ?? null,
+}
+await writeFile('data/ours.json', JSON.stringify({ at: fresh > 0 ? Date.now() : (prev?.at ?? Date.now()), scan, tokens: list }))
+console.log(`游标 → v1=${scan.v1} v2=${scan.v2}`)
 console.log(`ours.json written: ${list.length} tokens`)
