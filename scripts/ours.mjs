@@ -71,6 +71,7 @@ async function erc20Meta(token) {
   return { name: await call('0x06fdde03'), symbol: await call('0x95d89b41') }
 }
 
+const RUN_START = Date.now()
 const prev = await readFile('data/ours.json', 'utf8').then((t) => JSON.parse(t)).catch(() => null)
 /** 旧文件里的 gt 可能还是整份 GT 响应（2MB 那版）—— 沿用时先压成瘦格式，别把胖的又写回去 */
 function slimGt(g) {
@@ -355,7 +356,14 @@ for (let i = 0; i < withPool.length; i += 30) {
   await sleep(2_500)
 }
 const v2Pools = withPool.filter(isV2)
-const v2Fresh = v2Pools.filter((t) => t.gt && prevByToken.get(t.token)?.gt !== t.gt).length
+// **按值比,不能按对象引用比。**
+// 原来是 `prevByToken.get(t.token)?.gt !== t.gt`。自从链上发现改成增量之后,上一版发现过的币
+// 是被**原对象**带过来的(carryPrev),于是 tokens 里的 t 和 prevByToken 里的是同一个对象 ——
+// `t.gt = {...}` 同时改了两边,这个比较永远说「没刷新」。
+// 实测:整轮 fresh 1053 / failed 0,它却报 `GT v2: 0/16 fresh` 并触发告警。
+// **一个永远会响的告警,比没有告警更糟** —— 它会把真正该响的那次一起淹掉。
+// 用 pAt(这一轮抓到价时写的时间戳)按值判,和对象怎么复用无关。
+const v2Fresh = v2Pools.filter((t) => (t.gt?.pAt ?? 0) >= RUN_START).length
 console.log(`GT: fresh ${fresh}, failed ${failed}, pools ${withPool.length}, no-pool ${tokens.size - withPool.length}`)
 // v2 是首页在看的那一批。它要是没拿满，说明连第 1 批都被限流了，属于要立刻处理的情况。
 console.log(`GT v2: ${v2Fresh}/${v2Pools.length} fresh`)
