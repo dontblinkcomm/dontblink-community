@@ -143,7 +143,11 @@ for (const { p } of queue) {
   await sleep(GAP_MS)
 }
 
-const covered = pools.filter((p) => store[p]).length
+// **只数「有值的」,不数「有条目的」。**
+// 空 K 线要重试的池子会先写一条只带 emptyTries 的记录(为了让队列前进),
+// 它没有 v —— 数进来的话覆盖率会虚高:实测一轮里 5 个真刷新却报成 +42。
+// 覆盖率是首页决定「敢不敢改口径」的依据,虚高比偏低危险得多。
+const covered = pools.filter((p) => typeof store[p]?.v === 'number').length
 const totalUsd = pools.reduce((s, p) => s + (store[p]?.v ?? 0), 0)
 
 // 只保留还在册的池子，免得文件无限长胖
