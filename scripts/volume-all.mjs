@@ -104,9 +104,26 @@ for (const { p } of queue) {
       if (!Array.isArray(rows)) { note(`HTTP${r.status} ${String(j?.errors?.[0]?.title ?? j?.error ?? '无 ohlcv_list').slice(0, 40)}`); break }
       // **空数组不等于「这个池子没成交过」。** 同一个池子实测第一次返回 0 根、第二次 20 根 ——
       // 把空当成 0 写进去，就等于把一次读取失败固化成一个事实。留着不动，下一轮再来。
-      if (rows.length === 0) { note('K线为空'); break }
+      if (rows.length === 0) {
+        // **空 K 线不能永远「下轮再来」。** 那些池子是真的没成交过,于是永远停在
+        // 「从没读过」、永远排在队首 —— 队列一步都不前进,后面九百多个池子永远轮不到。
+        // 实测 14 轮 7 小时只前进了 4 个。
+        //
+        // 试满 3 次仍然空就记 0 并计入覆盖(带 empty 标记,以后想重查分得出来)。
+        // 单次空有可能是抖动(同一个池子见过第一次 0 根、第二次 20 根),所以不是一次就定。
+        const tries = (store[p]?.emptyTries ?? 0) + 1
+        if (tries >= 3) { store[p] = { v: 0, days: 0, at: now, empty: true }; zeroed++ }
+        else { store[p] = { ...(store[p] ?? {}), emptyTries: tries, at: now - 6 * 3600_000 } }
+        note(tries >= 3 ? 'K线连续三次为空,记 0' : 'K线为空(下轮再试)')
+        done = true
+        break
+      }
       const v = rows.reduce((s, x) => s + (Number(x?.[5]) || 0), 0)
-      store[p] = { v, days: rows.length, at: now }
+      // **取历史最大值 —— 这个数只增不减。** 日 K 是已经发生过的成交,不该变小;
+      // 真变小了那是这次没读全(GT 分页/抖动),而不是那些交易没发生过。
+      // 结果:首页那个总量永远不会当着人的面往回跳。
+      const before = store[p]?.v ?? 0
+      store[p] = { v: Math.max(v, before), days: rows.length, at: now }
       ok++
       done = true
     } catch (e) {
@@ -116,6 +133,9 @@ for (const { p } of queue) {
   }
   if (done) consecutiveFail = 0
   else {
+    // 走到这里只剩一种情况:三次都被限流/网络失败。**空 K 线不算 GT 不可用** ——
+    // 上面那段已经把它 done 掉了。混在一起的话,一串死池子会被误判成「GT 挂了」而提前收工,
+    // 那正是这个脚本 7 小时只前进 4 个池子的原因。
     consecutiveFail++
     note('三次都限流')
     if (consecutiveFail >= 8) { giveUp = true; note('连续 8 个全失败,判定 GT 不可用,提前收工') }
