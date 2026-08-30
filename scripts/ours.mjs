@@ -270,7 +270,20 @@ const withPool = [...tokens.values()]
   .sort((a, b) => (isV2(b) ? 1 : 0) - (isV2(a) ? 1 : 0) || b.createdBlock - a.createdBlock)
 let fresh = 0
 let failed = 0
-let gtDown = false // 连续被限流就别再撞了 —— 35 批 × 25 秒退避 = 15 分钟，cron 等不起
+/**
+ * **一个批次失败不再放弃剩下全部。**
+ *
+ * 原来是「某一批连败三次 → gtDown → 后面 30 多批全部跳过」,理由写的是
+ * 「35 批 × 25 秒退避 = 15 分钟,cron 等不起」。**那是 cron 还是每 10 分钟时写的。**
+ * 2026-08-29 改成每小时之后,15 分钟完全等得起,而那条规则的代价是:
+ * 实测一轮 `fresh 59, failed 1000` —— 它在第 2 批就放弃了整轮,
+ * 一千枚币的价因此停在几小时前。
+ *
+ * 现在要连着 5 批全败才判定 GT 整体不可用。单批失败只影响那 30 枚(它们沿用旧值)。
+ */
+let gtDown = false
+let batchStrikeRun = 0
+const GIVE_UP_AFTER = 5
 const MAX_BATCHES = Number(process.env.GT_MAX_BATCHES || 0) // 本地验管线用；Actions 上不设 = 全量
 for (let i = 0; i < withPool.length; i += 30) {
   const batch = withPool.slice(i, i + 30)
@@ -290,8 +303,13 @@ for (let i = 0; i < withPool.length; i += 30) {
       console.log(`  batch ${i / 30 + 1}: ${r ? r.status : 'fetch failed'}`)
     }
     if (!j && strikes >= 3) {
-      gtDown = true
-      console.log(`GT rate-limited at batch ${i / 30 + 1}/${Math.ceil(withPool.length / 30)}; keeping previous market data for the rest`)
+      batchStrikeRun++
+      if (batchStrikeRun >= GIVE_UP_AFTER) {
+        gtDown = true
+        console.log(`GT 连续 ${GIVE_UP_AFTER} 批全败(第 ${i / 30 + 1}/${Math.ceil(withPool.length / 30)} 批),判定不可用,其余沿用旧行情`)
+      }
+    } else if (j) {
+      batchStrikeRun = 0
     }
   }
   if (!j) {
@@ -332,7 +350,9 @@ for (let i = 0; i < withPool.length; i += 30) {
       t.gt = prevByToken.get(t.token).gt
     }
   }
-  await sleep(1_500)
+  // **2.5 秒,不是 1.5 秒。** GT 免费档是 30 次/分钟,而 1.5 秒 = 40 次/分钟 ——
+  // 那是在自己把自己限流。改成每小时跑之后,36 批 × 2.5 秒 = 90 秒,完全等得起。
+  await sleep(2_500)
 }
 const v2Pools = withPool.filter(isV2)
 const v2Fresh = v2Pools.filter((t) => t.gt && prevByToken.get(t.token)?.gt !== t.gt).length
