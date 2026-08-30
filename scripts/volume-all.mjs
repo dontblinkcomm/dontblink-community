@@ -27,7 +27,6 @@ const OUT = 'data/volume-all.json'
  * 和调度间隔一样长，加上 concurrency 不取消，排队的定时运行被 GitHub 丢掉)。
  * 所以每轮多花两分钟不是问题，扫不完也不要紧 —— covered/known 会把「还没扫完」说出来。
  */
-const BATCH = Number(process.env.VOL_BATCH || 60)
 const GAP_MS = Number(process.env.VOL_GAP_MS || 2000)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -50,6 +49,21 @@ if (pools.length === 0) {
 }
 
 const prev = await readJson(OUT, { pools: {} })
+const prev0Pools = prev.pools ?? {}
+const prev0Known = Number(prev.known ?? 0)
+
+/**
+ * **首轮回填要大批量,扫完之后不需要。**
+ *
+ * 1060 个池子第一次全扫一遍:按 60 一轮、每半小时一轮,要四个多小时;220 大约一小时。
+ * 但稳态下每轮只有少数池子的成交量会变,再按 220 扫就是白打 GT 的配额
+ * (而 GT 一限流,ours.mjs 那边的行情就跟着变旧)。
+ *
+ * 所以按「扫完了没有」自己收 —— 免得留一个「记得改回去」的手工步骤,
+ * 那种步骤没人会记得,而且忘了也不报错。
+ */
+const covered0 = Object.values(prev0Pools).filter((v) => typeof v?.v === 'number').length
+const BATCH = Number(process.env.VOL_BATCH || (covered0 < 0.98 * Math.max(1, prev0Known) ? 220 : 60))
 const store = { ...(prev.pools ?? {}) }
 
 // 先刷从来没读过的，再刷最久没刷的。**不要随机挑** —— 随机挑会让某些池子长期抽不到，
