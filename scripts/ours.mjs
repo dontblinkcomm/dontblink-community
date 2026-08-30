@@ -87,6 +87,9 @@ function slimGt(g) {
     fdv: Number(a.fdv_usd ?? 0),
     tx: tx ? Number(tx.buys ?? 0) + Number(tx.sells ?? 0) : 0,
     at: a.pool_created_at ?? null,
+    // **这里是压缩旧数据,不能盖新戳。** 写 Date.now() 会把三周前的价标成刚抓的,
+    // 这个字段本身就成了谎言 —— 比不加还糟。来源不明就是 null。
+    pAt: null,
     name: a.name ?? null,
     dex: g.data.relationships?.dex?.data?.id ?? null,
     img: img && img !== 'missing.png' ? img : null,
@@ -317,6 +320,9 @@ for (let i = 0; i < withPool.length; i += 30) {
         fdv: Number(a.fdv_usd ?? 0),
         tx: tx ? Number(tx.buys ?? 0) + Number(tx.sells ?? 0) : 0,
         at: a.pool_created_at ?? null,
+        // 这条行情是什么时候抓的。**`at` 是池子创建时间,两回事** ——
+        // 没有 pAt 就无从知道某一行的价是十分钟前的还是三周前的。
+        pAt: Date.now(),
         name: a.name ?? null,
         dex: p.relationships?.dex?.data?.id ?? null,
         img: img && img !== 'missing.png' ? img : null,
@@ -429,6 +435,9 @@ if (curveTokens.length && ethUsd > 0) {
         fdv: m.fdv,
         tx,
         at: null,
+        // 这条行情是什么时候抓的。**`at` 是池子创建时间,两回事** ——
+        // 没有 pAt 就无从知道某一行的价是十分钟前的还是三周前的。
+        pAt: Date.now(),
         name: `${t.symbol} · curve`,
         dex: 'dontblink-curve',
         img: null,
