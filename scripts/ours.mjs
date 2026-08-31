@@ -378,12 +378,28 @@ const v2Fresh = v2Pools.filter((t) => !v2Stale(t)).length
 console.log(`GT: fresh ${fresh}, failed ${failed}, pools ${withPool.length}, no-pool ${tokens.size - withPool.length}`)
 // v2 是首页在看的那一批。它要是没拿满，说明连第 1 批都被限流了，属于要立刻处理的情况。
 console.log(`GT v2: ${v2Fresh}/${v2Pools.length} 的价在 2 小时内`)
-if (v2Pools.length && v2Fresh < v2Pools.length) {
+/**
+ * **「从来没有过价」和「有过价但变旧了」是两回事,只有后者该报警。**
+ *
+ * BB(pool 0xfd2bf0d0…ff92)那个池子建了但**从来没有人交易过** —— 链上最近 20 万块里
+ * Swap 事件是 0。GT 没有它的价,是因为没有价可给。这不是故障,而我那条告警为它
+ * 每小时响一次,是纯噪音 —— 而噪音会把真正该响的那次一起淹掉。
+ *
+ * 所以拆开:没有价可给的,记一行普通信息;有过价、现在旧了的,才 WARNING。
+ */
+const neverPriced = v2Pools.filter((t) => !t.gt || t.gt.price == null)
+const wentStale = v2Pools.filter((t) => t.gt?.price != null && v2Stale(t))
+if (neverPriced.length) {
+  console.log(
+    `v2 里有 ${neverPriced.length} 枚还没有价(池子在,但没人交易过,GT 无从定价):` +
+    neverPriced.map((t) => t.symbol ?? t.token.slice(0, 8)).join(', '),
+  )
+}
+if (wentStale.length) {
   // **说出是哪一枚。** 原来只说「有 v2 币没拿到新行情」—— 十六枚里哪一枚?
   // 一条不说清对象的告警,只会训练人忽略所有告警;而它一旦每轮都响,
   // 真正该响的那次也会被一起忽略掉。带上符号和它的价有多旧,才谈得上处理。
-  const stale = v2Pools
-    .filter(v2Stale)
+  const stale = wentStale
     .map((t) => {
       const ageH = t.gt?.pAt ? ((RUN_START - t.gt.pAt) / 3600_000).toFixed(1) + 'h' : '从没抓到过'
       return `${t.symbol ?? t.token.slice(0, 8)}(${ageH})`
