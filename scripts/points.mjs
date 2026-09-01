@@ -232,19 +232,30 @@ async function collectSwaps(pools, fromBlock, toBlock, price, ledgerPoolMeta, re
   // **超时就对半劈,不是干等。** 20 个池子 × 200k 块的查询会让 RH 的 RPC 回
   // "log query timed out" —— 重试同样的区间只会再超时一次(索引器那边同一课:
   // 「区间太宽」和「太快了」的正确反应相反)。劈到 12.5k 块还不行才算真失败。
+  // **超时该劈,限速该等 —— 两者的正确反应相反**(索引器 2026-08-30 同一课)。
+  // 劈半对付 "log query timed out"(区间太宽);而 429 是每分钟请求数打满了,
+  // 劈得越碎请求越多,只会撞得更狠 —— Actions 上第一次重建就是这么倒的。
   const fetchRange = async (from, to, depth = 0) => {
-    try {
-      return await rpc('eth_getLogs', [
-        { address: addresses, topics: [SWAP_TOPIC], fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) },
-      ])
-    } catch (e) {
-      const splittable = to - from >= 25_000 && depth < 5
-      if (splittable) {
-        const mid = Math.floor((from + to) / 2)
-        await sleep(300)
-        return [...(await fetchRange(from, mid, depth + 1)), ...(await fetchRange(mid + 1, to, depth + 1))]
+    for (let waits = 0; ; ) {
+      try {
+        return await rpc('eth_getLogs', [
+          { address: addresses, topics: [SWAP_TOPIC], fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) },
+        ])
+      } catch (e) {
+        const msg = String(e.message ?? e)
+        if (/Too Many Requests|429|rate limit/i.test(msg)) {
+          if (waits++ >= 4) throw e
+          await sleep(20_000)
+          continue
+        }
+        const splittable = to - from >= 25_000 && depth < 5
+        if (splittable) {
+          const mid = Math.floor((from + to) / 2)
+          await sleep(500)
+          return [...(await fetchRange(from, mid, depth + 1)), ...(await fetchRange(mid + 1, to, depth + 1))]
+        }
+        throw e
       }
-      throw e
     }
   }
   const logs = []
