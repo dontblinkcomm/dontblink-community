@@ -181,25 +181,90 @@ const toBig = (hex) => {
 const abs = (v) => (v < 0n ? -v : v)
 
 // 从链上 Swap 日志拿成交：[{ id, trader, volumeUsd, block }]
-async function collectSwaps(pools, fromBlock, toBlock, price) {
+async function collectSwaps(pools, fromBlock, toBlock, price, ledgerPoolMeta, rebuild = false) {
   const byPool = new Map(pools.map((p) => [p.pool, p]))
   const weightOf = new Map(pools.map((p) => [p.pool, p.weight ?? 1]))
   const addresses = [...byPool.keys()]
   if (addresses.length === 0) return []
-  // 每个池 WETH 在哪一侧：token0 = 地址小的那个
-  const wethIs0 = new Map(pools.map((p) => [p.pool, WETH < p.token]))
+  // **每个池的 WETH 在哪一侧,从链上问,不猜。**
+  //
+  // 原来是 `WETH < p.token`(token0 = 地址小的那个)。这个判断对「另一边不是 WETH」的池子
+  // **照样给出一个布尔值** —— 股票计价的池子(X/NVDA 那类)没有 WETH 腿,于是"WETH 腿"
+  // 实际读的是代币数量:几百万枚 × ETH 价 = 几十亿美元。2026-09-01 榜一因此挂着
+  // **$96,760,351,739(967 亿)、10 笔交易** —— 全站累计才 $33M。
+  // 金库页 2026-08-19 栽过一模一样的坑($1.91B),教训写在 treasury.ts 里,这里没吸收。
+  //
+  // 现在:token0()/token1() 各问一次链(结果缓存进账本,只问一次);
+  // 两边都不是 WETH 的池子**整个不计分** —— 它的腿没法用 ETH 定价,宁可不给分,不能编。
+  const sideCache = ledgerPoolMeta ?? {}
+  const need = pools.filter((p) => sideCache[p.pool]?.wethSide === undefined)
+  if (need.length) {
+    // 分批 + 重试:RPC 每分钟有请求数限制,一把梭两个大 batch 会直接 429 —— 首次本地验证就撞了。
+    const batched = async (data) => {
+      const out = []
+      for (let i = 0; i < need.length; i += 25) {
+        const slice = need.slice(i, i + 25)
+        for (let attempt = 0; ; attempt++) {
+          try {
+            out.push(...(await rpcBatch(slice.map((p) => ({ method: 'eth_call', params: [{ to: p.pool, data }, 'latest'] })))))
+            break
+          } catch (e) {
+            if (attempt >= 3) throw e
+            await sleep(1500 * 2 ** attempt)
+          }
+        }
+        await sleep(300)
+      }
+      return out
+    }
+    const t0 = await batched('0x0dfe1681')
+    const t1 = await batched('0xd21220a7')
+    need.forEach((p, i) => {
+      const a0 = '0x' + String(t0[i] ?? '').slice(-40).toLowerCase()
+      const a1 = '0x' + String(t1[i] ?? '').slice(-40).toLowerCase()
+      const side = a0 === WETH ? 0 : a1 === WETH ? 1 : null
+      ;(sideCache[p.pool] ??= {}).wethSide = side
+      if (side === null) console.error(`pool ${p.pool} (${p.symbol ?? '?'}) is not WETH-paired — excluded from points; its leg cannot be priced in ETH`)
+    })
+  }
+  const wethSideOf = (pool) => sideCache[pool]?.wethSide ?? null
 
+  // **超时就对半劈,不是干等。** 20 个池子 × 200k 块的查询会让 RH 的 RPC 回
+  // "log query timed out" —— 重试同样的区间只会再超时一次(索引器那边同一课:
+  // 「区间太宽」和「太快了」的正确反应相反)。劈到 12.5k 块还不行才算真失败。
+  const fetchRange = async (from, to, depth = 0) => {
+    try {
+      return await rpc('eth_getLogs', [
+        { address: addresses, topics: [SWAP_TOPIC], fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) },
+      ])
+    } catch (e) {
+      const splittable = to - from >= 25_000 && depth < 5
+      if (splittable) {
+        const mid = Math.floor((from + to) / 2)
+        await sleep(300)
+        return [...(await fetchRange(from, mid, depth + 1)), ...(await fetchRange(mid + 1, to, depth + 1))]
+      }
+      throw e
+    }
+  }
   const logs = []
   for (let from = fromBlock; from <= toBlock; from += LOG_CHUNK) {
     const to = Math.min(from + LOG_CHUNK - 1, toBlock)
-    try {
-      const chunk = await rpc('eth_getLogs', [
-        { address: addresses, topics: [SWAP_TOPIC], fromBlock: '0x' + from.toString(16), toBlock: '0x' + to.toString(16) },
-      ])
-      logs.push(...chunk)
-    } catch (e) {
-      console.error(`swap logs [${from}-${to}] failed (non-fatal): ${e.message}`)
+    let got = false
+    for (let attempt = 0; attempt < 3 && !got; attempt++) {
+      try {
+        logs.push(...(await fetchRange(from, to)))
+        got = true
+      } catch (e) {
+        if (attempt < 2) await sleep(2000 * 2 ** attempt)
+        else if (rebuild) {
+          // **重建中丢一刀 = 那一段的成交永远消失**(下一轮又回到只扫尾部)。
+          // 宁可整轮失败保持中毒标记、下一轮从头再来,也不能静默交出一份缺账的"完整"重建。
+          throw new Error(`rebuild: swap logs [${from}-${to}] failed after retries+splits: ${e.message}`)
+        } else console.error(`swap logs [${from}-${to}] failed (non-fatal, incremental run): ${e.message}`)
+      }
     }
+    await sleep(250)
   }
 
   // tx.from：按 hash 去重后分批查
@@ -229,10 +294,16 @@ async function collectSwaps(pools, fromBlock, toBlock, price) {
     if (data.length < 64 * 2) continue
     const amount0 = toBig('0x' + data.slice(0, 64))
     const amount1 = toBig('0x' + data.slice(64, 128))
-    const wethAmt = wethIs0.get(pool) ? amount0 : amount1
+    const side = wethSideOf(pool)
+    if (side === null) continue // 非 WETH 池:没法用 ETH 定价,不计分
+    const wethAmt = side === 0 ? amount0 : amount1
     const eth = Number(abs(wethAmt)) / 1e18
     const trader = from.get(l.transactionHash)
     if (!trader || !(eth > 0)) continue
+    // **荒谬值熔断。** 侧别判断以后还可能以别的方式出错,而错出来的数字都长一个样:大得离谱。
+    // 这条链一整天的真实成交量不过几万美元,单笔 10,000 ETH(约 $2,400 万)只能是算错了 ——
+    // 记日志、跳过,别让它进任何人的账。
+    if (eth > 10_000) { console.error(`swap ${l.transactionHash} leg=${eth.toFixed(0)} ETH — absurd, skipped`); continue }
     // volumeUsd 是"计分用"的量（已乘版本权重）；rawUsd 是真实成交额，只用于展示
     const w = weightOf.get(pool) ?? 1
     trades.push({
@@ -299,9 +370,22 @@ async function main() {
   if (pools.length === 0) console.error('no active dontblink pools in ours.json; writing empty snapshot')
 
   const head = parseInt(await rpc('eth_blockNumber', []), 16)
-  const scanFrom = Math.max(1, head - SCAN_HOURS * BLOCKS_PER_HOUR)
+
+  // **中毒账本自愈。** 修选边 bug 只能挡住新的脏数据,而账本里已经累计了几百亿的假量,
+  // seen 去重还会阻止重扫。所以:任何钱包的累计量超过 $5,000万(全站真实累计的上千倍)
+  // 即判定账本被污染 —— 清空钱包与去重表,从 Portal 部署块起重扫一遍。
+  // 12.5M 块 ÷ 200k 一刀 = 63 次 getLogs,一次 Actions 跑得完;之后永远走增量。
+  let scanFrom = Math.max(1, head - SCAN_HOURS * BLOCKS_PER_HOUR)
+  const poisoned = Object.values(ledger.wallets ?? {}).some((w) => Number(w.volumeUsd) > 50_000_000)
+  if (poisoned) {
+    console.error('ledger poisoned (a wallet exceeds $50M volume) — resetting wallets and rescanning from portal deploy')
+    ledger.wallets = {}
+    ledger.seen = {}
+    scanFrom = 38_269_916 // v2 Portal 部署块
+  }
   const price = await ethUsd()
-  const swaps = await collectSwaps(pools, scanFrom, head, price)
+  ledger.pools ??= {}
+  const swaps = await collectSwaps(pools, scanFrom, head, price, ledger.pools, poisoned)
 
   // 合并进累计账本（按 swap id 去重）
   let added = 0
@@ -319,7 +403,7 @@ async function main() {
   ledger.lastBlock = head
   ledger.updated = new Date().toISOString()
   ledger.ethUsd = price
-  ledger.pools = Object.fromEntries(pools.map((p) => [p.pool, { token: p.token, symbol: p.symbol }]))
+  ledger.pools = Object.fromEntries(pools.map((p) => [p.pool, { token: p.token, symbol: p.symbol, wethSide: ledger.pools[p.pool]?.wethSide }]))
   const referralBindings = await collectReferrals(ledger, head)
   await mkdir('data', { recursive: true })
   await writeFile(LEDGER, JSON.stringify(ledger))
