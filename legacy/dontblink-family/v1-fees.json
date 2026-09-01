@@ -1,17 +1,17 @@
 {
- "capturedAt": 1788230766,
- "block": 51373360,
+ "capturedAt": 1788287520,
+ "block": 51935297,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
-  "claimable": 686,
-  "nothing": 313,
+  "claimable": 689,
+  "nothing": 310,
   "capped": 0,
   "windowOpen": 0,
   "other": 0
  },
- "wethOutstanding": "3148981810222834358",
- "wethClaimable": "3148981810222834358",
+ "wethOutstanding": "5243691593218445631",
+ "wethClaimable": "5243691593218445631",
  "wethBricked": "0",
- "devsWithClaimable": 281,
+ "devsWithClaimable": 282,
  "bricked": []
 }
