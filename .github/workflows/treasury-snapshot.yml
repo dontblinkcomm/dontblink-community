@@ -1,0 +1,28 @@
+# 金库账本快照 —— 与 boards-snapshot 不同源不同产物：本 job 只写 data/treasury.json，
+# 唯一写入者是它自己（muse-mini 不碰这个文件），单跑 <1 分钟，不会重演 boards 那个
+# 「运行时长 = 间隔」的排队丢弃事故。存在的根因：官方 RPC 的 CORS 间歇性坏，
+# 浏览器读不了链，账本必须有服务器侧的快照兜底。
+name: treasury-snapshot
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: treasury-snapshot
+  cancel-in-progress: true
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/treasury-ledger.mjs
+      - name: commit if changed
+        run: |
+          git config user.name dbc-bot
+          git config user.email bot@dontblink.community
+          git add data/treasury.json
+          git diff --cached --quiet || git commit -m "treasury snapshot"
+          git push
