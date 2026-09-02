@@ -1,0 +1,529 @@
+{
+ "info": {
+  "NVDA": {
+   "sector": "AI / Semis",
+   "blurb": "The AI arms dealer — every datacenter buildout runs through its GPUs."
+  },
+  "AAPL": {
+   "sector": "Big Tech",
+   "blurb": "The most valuable consumer franchise on earth; the buyback machine."
+  },
+  "TSLA": {
+   "sector": "EV / Meme-adjacent",
+   "blurb": "EVs, robots, and the most cult-like shareholder base in large caps."
+  },
+  "GOOGL": {
+   "sector": "Big Tech",
+   "blurb": "Search monopoly + YouTube + a claim on AI through Gemini and TPUs."
+  },
+  "SPY": {
+   "sector": "Index",
+   "blurb": "The S&P 500 itself — pairing a meme with it is pairing against the market."
+  },
+  "MSFT": {
+   "sector": "Big Tech",
+   "blurb": "Azure + OpenAI stake + enterprise gravity; the quiet AI toll-booth."
+  },
+  "AMZN": {
+   "sector": "Big Tech",
+   "blurb": "Everything store plus AWS — margins live in the cloud."
+  },
+  "AMD": {
+   "sector": "Semis",
+   "blurb": "The eternal challenger — every NVDA wobble is an AMD narrative."
+  },
+  "PLTR": {
+   "sector": "AI / Defense",
+   "blurb": "Retail's favorite defense-AI story; priced like a religion."
+  },
+  "GME": {
+   "sector": "Meme royalty",
+   "blurb": "The original squeeze. Its holders already behave like a token community."
+  },
+  "MU": {
+   "sector": "Semis / Memory",
+   "blurb": "Memory is the cycle — HBM demand turned it into an AI trade."
+  },
+  "META": {
+   "sector": "Big Tech",
+   "blurb": "Ads money-printer funding an open-source AI empire."
+  },
+  "COIN": {
+   "sector": "Crypto",
+   "blurb": "The listed proxy for crypto itself — beta on everything on-chain."
+  },
+  "INTC": {
+   "sector": "Semis",
+   "blurb": "Fallen giant mid-turnaround; every headline is a referendum."
+  },
+  "ORCL": {
+   "sector": "Enterprise / AI",
+   "blurb": "Legacy database turned AI-datacenter landlord; backlog shocks move it."
+  },
+  "RDDT": {
+   "sector": "Social / Meme",
+   "blurb": "The platform memes are born on — now itself a ticker."
+  },
+  "DJT": {
+   "sector": "Meme / Politics",
+   "blurb": "Pure narrative flow — trades on politics, not financials."
+  },
+  "NFLX": {
+   "sector": "Streaming",
+   "blurb": "The streaming war's winner; price hikes as a business model."
+  },
+  "COST": {
+   "sector": "Retail",
+   "blurb": "The membership cult — the most defended premium multiple in retail."
+  },
+  "GLD": {
+   "sector": "Gold",
+   "blurb": "Gold in ETF form — the anti-fiat thesis, tokenized twice over."
+  },
+  "QQQ": {
+   "sector": "Index",
+   "blurb": "Nasdaq-100 beta — the tech trade in one line."
+  },
+  "CRCL": {
+   "sector": "Crypto / Stablecoins",
+   "blurb": "USDC's issuer — a bet that stablecoins eat payments."
+  },
+  "TSM": {
+   "sector": "Semis",
+   "blurb": "The foundry the whole AI supply chain stands on. Taiwan risk = the discount."
+  },
+  "MSTR": {
+   "sector": "Crypto / Leverage",
+   "blurb": "A leveraged bitcoin wrapper wearing a software costume."
+  },
+  "TTWO": {
+   "sector": "Gaming",
+   "blurb": "GTA VI is the single biggest product launch in entertainment history."
+  },
+  "USO": {
+   "sector": "Oil",
+   "blurb": "Crude in a ticker — macro and war premium, nothing else."
+  },
+  "SLV": {
+   "sector": "Silver",
+   "blurb": "Silver — the squeeze crowd's oldest obsession, pre-dating GME."
+  },
+  "RBLX": {
+   "sector": "Gaming",
+   "blurb": "Where the next generation already lives; engagement is the moat."
+  },
+  "XOM": {
+   "sector": "Oil",
+   "blurb": "Big Oil's flagship — cashflow colossus, politically unloved."
+  },
+  "BB": {
+   "sector": "Meme legacy",
+   "blurb": "BlackBerry — 2021 meme cohort veteran, now a security software story."
+  },
+  "DELL": {
+   "sector": "Hardware / AI",
+   "blurb": "AI-server assembly line — the pick-and-shovel PC maker."
+  },
+  "AMAT": {
+   "sector": "Semis equipment",
+   "blurb": "Sells the machines that make the chips — upstream of everything."
+  },
+  "HIMS": {
+   "sector": "Healthcare / Meme",
+   "blurb": "Telehealth with GLP-1 upside and one of the highest short interests on the board."
+  },
+  "ASML": {
+   "sector": "Semis equipment",
+   "blurb": "The EUV monopoly. No ASML, no advanced chips, anywhere."
+  },
+  "MRVL": {
+   "sector": "Semis",
+   "blurb": "Custom AI silicon for hyperscalers — the other custom-chip story."
+  },
+  "LLY": {
+   "sector": "Pharma",
+   "blurb": "GLP-1 empire — the biggest drug franchise ever built."
+  },
+  "QUBT": {
+   "sector": "Quantum / Meme",
+   "blurb": "Quantum micro-cap that moves like a lottery ticket."
+  },
+  "AVGO": {
+   "sector": "Semis",
+   "blurb": "Custom AI accelerators + software rollups — the quiet trillion-dollar one."
+  },
+  "QCOM": {
+   "sector": "Semis",
+   "blurb": "Mobile chip royalty — handset cycle plus automotive optionality."
+  },
+  "AMC": {
+   "sector": "Meme royalty",
+   "blurb": "The other 2021 legend — apes, dilution, and theater kids."
+  },
+  "MRNA": {
+   "sector": "Biotech",
+   "blurb": "mRNA platform hunting for a second act after covid."
+  },
+  "BA": {
+   "sector": "Aerospace",
+   "blurb": "Duopoly wings with a decade of self-inflicted wounds priced in."
+  },
+  "NU": {
+   "sector": "Fintech",
+   "blurb": "LatAm's neobank juggernaut — Buffett-blessed growth story."
+  },
+  "RIVN": {
+   "sector": "EV",
+   "blurb": "The EV underdog with VW money and Amazon vans."
+  },
+  "BABA": {
+   "sector": "China Tech",
+   "blurb": "China tech beta — every stimulus rumor trades through it."
+  },
+  "JNJ": {
+   "sector": "Pharma",
+   "blurb": "Dividend aristocrat; the definition of defensive."
+  },
+  "SHOP": {
+   "sector": "E-commerce",
+   "blurb": "The anti-Amazon — every indie storefront's operating system."
+  },
+  "SOUN": {
+   "sector": "AI / Meme",
+   "blurb": "Voice-AI small cap that retail treats as an NVDA satellite."
+  },
+  "ASTS": {
+   "sector": "Space / Meme",
+   "blurb": "Satellites that talk straight to your phone — believers vs physics."
+  },
+  "SOFI": {
+   "sector": "Fintech",
+   "blurb": "The neobank that wants to be your everything-app for money."
+  },
+  "F": {
+   "sector": "Auto",
+   "blurb": "Ford — cheap, yielding, and perpetually mid-turnaround."
+  },
+  "LULU": {
+   "sector": "Retail",
+   "blurb": "Athleisure king fighting the 'growth is over' tape."
+  },
+  "IBM": {
+   "sector": "Enterprise",
+   "blurb": "The AI-consulting rerate nobody saw coming."
+  },
+  "RKLB": {
+   "sector": "Space",
+   "blurb": "The only credible small-launch company — Neutron is the catalyst."
+  },
+  "NET": {
+   "sector": "Cloud / Security",
+   "blurb": "The internet's middleware — every packet is a toll."
+  },
+  "ZM": {
+   "sector": "Software",
+   "blurb": "Zoom — pandemic hero hunting for relevance 2.0."
+  },
+  "SMCI": {
+   "sector": "AI Hardware",
+   "blurb": "AI-server pure play with a drama habit — volatility is the feature."
+  },
+  "SNAP": {
+   "sector": "Social",
+   "blurb": "Perma-underdog of social — every AR rumor pumps it."
+  },
+  "DDOG": {
+   "sector": "Software",
+   "blurb": "Observability standard — the cloud's monitoring bill."
+  },
+  "NOW": {
+   "sector": "Software",
+   "blurb": "Enterprise workflow monopoly-in-progress."
+  },
+  "UPS": {
+   "sector": "Logistics",
+   "blurb": "The economy's bloodstream, unionized."
+  },
+  "CCL": {
+   "sector": "Travel",
+   "blurb": "Cruise demand supercycle vs a mountain of debt."
+  },
+  "FUTU": {
+   "sector": "Fintech / China",
+   "blurb": "China's retail-trading terminal — bull-market beta squared."
+  },
+  "ADBE": {
+   "sector": "Software",
+   "blurb": "Creative-suite monopoly fighting the 'AI kills it' narrative."
+  },
+  "IONQ": {
+   "sector": "Quantum",
+   "blurb": "The listed quantum-computing bet with actual hardware."
+  },
+  "RGTI": {
+   "sector": "Quantum / Meme",
+   "blurb": "Quantum small cap — moves 20% on a press release."
+  },
+  "GE": {
+   "sector": "Industrial",
+   "blurb": "GE Aerospace — the comeback story that actually landed."
+  },
+  "RUN": {
+   "sector": "Solar",
+   "blurb": "Residential solar leverage — rates decide its fate."
+  },
+  "ELF": {
+   "sector": "Consumer",
+   "blurb": "Beauty's growth machine — TikTok is the distribution."
+  },
+  "SNOW": {
+   "sector": "Software",
+   "blurb": "Data-cloud land grab; consumption model = macro sensitivity."
+  },
+  "CELH": {
+   "sector": "Consumer",
+   "blurb": "Energy-drink rocket in its hangover phase."
+  },
+  "APP": {
+   "sector": "AdTech / AI",
+   "blurb": "The AI ad-machine printing money in mobile gaming."
+  },
+  "LUNR": {
+   "sector": "Space",
+   "blurb": "Moon-landing contractor — literal moonshots."
+  },
+  "VST": {
+   "sector": "Power / AI",
+   "blurb": "Electricity for datacenters — the AI power trade."
+  },
+  "CLOV": {
+   "sector": "Healthcare / Meme",
+   "blurb": "Medicare-AI meme veteran still fighting for a second act."
+  },
+  "GLW": {
+   "sector": "Hardware",
+   "blurb": "Glass for screens and fiber for AI datacenters."
+  },
+  "CRWD": {
+   "sector": "Security",
+   "blurb": "Cybersecurity's platform winner — outages included."
+  },
+  "PFE": {
+   "sector": "Pharma",
+   "blurb": "Post-covid hangover, pipeline hopes, fat dividend."
+  },
+  "CSCO": {
+   "sector": "Networking",
+   "blurb": "The internet's plumbing, now with AI switches."
+  },
+  "INTU": {
+   "sector": "Software",
+   "blurb": "Owns tax season and small-business accounting."
+  },
+  "MDB": {
+   "sector": "Software",
+   "blurb": "The developers' database — AI-app buildout beta."
+  },
+  "CVNA": {
+   "sector": "E-commerce",
+   "blurb": "The short squeeze that refused to die — car vending machines."
+  },
+  "LMT": {
+   "sector": "Defense",
+   "blurb": "Pure defense prime — geopolitics in ticker form."
+  },
+  "SMR": {
+   "sector": "Nuclear",
+   "blurb": "Small modular reactors — the most narrative-dense energy trade."
+  },
+  "ZS": {
+   "sector": "Security",
+   "blurb": "Zero-trust toll booth on enterprise traffic."
+  },
+  "UNH": {
+   "sector": "Healthcare",
+   "blurb": "The managed-care giant the whole sector prices off."
+  },
+  "CRM": {
+   "sector": "Software",
+   "blurb": "Salesforce — agentic-AI reinvention vs SaaS fatigue."
+  },
+  "ON": {
+   "sector": "Semis",
+   "blurb": "Power chips for EVs — auto cycle in silicon."
+  },
+  "PATH": {
+   "sector": "Software / AI",
+   "blurb": "RPA pioneer racing to stay relevant in the agent era."
+  },
+  "AVAV": {
+   "sector": "Defense / Drones",
+   "blurb": "Drones are the new artillery — the pure play."
+  },
+  "HPE": {
+   "sector": "Hardware",
+   "blurb": "Enterprise servers with an AI-networking kicker."
+  },
+  "AUR": {
+   "sector": "Autonomy",
+   "blurb": "Self-driving trucks — the long-promised future, listed."
+  },
+  "COHR": {
+   "sector": "Photonics",
+   "blurb": "Lasers and optics riding the AI-datacenter interconnect wave."
+  },
+  "OKLO": {
+   "sector": "Nuclear",
+   "blurb": "Altman-backed microreactors — AI power demand's poster child."
+  },
+  "WDC": {
+   "sector": "Memory",
+   "blurb": "Disks and NAND — the unloved half of the memory cycle."
+  },
+  "CEG": {
+   "sector": "Power / AI",
+   "blurb": "Nuclear fleet signing datacenter megadeals."
+  },
+  "LRCX": {
+   "sector": "Semis equipment",
+   "blurb": "Etch and deposition — memory capex in one ticker."
+  },
+  "PANW": {
+   "sector": "Security",
+   "blurb": "Cybersecurity platform consolidator."
+  },
+  "TTD": {
+   "sector": "AdTech",
+   "blurb": "The open internet's ad exchange — CTV is the story."
+  },
+  "TEAM": {
+   "sector": "Software",
+   "blurb": "Jira and Confluence — developer seats as an annuity."
+  },
+  "FTNT": {
+   "sector": "Security",
+   "blurb": "Firewall workhorse with hardware-cycle rhythms."
+  },
+  "JOBY": {
+   "sector": "eVTOL",
+   "blurb": "Flying taxis — certification is the whole thesis."
+  },
+  "ANET": {
+   "sector": "Networking",
+   "blurb": "AI-cluster networking — NVDA's neighbor in every buildout."
+  },
+  "TER": {
+   "sector": "Semis equipment",
+   "blurb": "Chip-testing duopolist plus a robotics side quest."
+  },
+  "AXON": {
+   "sector": "Defense / Public safety",
+   "blurb": "Tasers and body cams — a monopoly nobody talks about."
+  },
+  "VTI": {
+   "sector": "Index",
+   "blurb": "The whole US market in one line."
+  },
+  "KTOS": {
+   "sector": "Defense",
+   "blurb": "Drones and hypersonics small cap — budget-cycle torque."
+  },
+  "JBL": {
+   "sector": "Hardware",
+   "blurb": "Contract manufacturing riding the AI-hardware wave."
+  },
+  "CLS": {
+   "sector": "Hardware / AI",
+   "blurb": "Celestica — the sleeper AI-server assembler that 10x'd."
+  },
+  "VRT": {
+   "sector": "AI Infrastructure",
+   "blurb": "Cooling and power for datacenters — the AI heat trade."
+  },
+  "SATS": {
+   "sector": "Telecom / Space",
+   "blurb": "EchoStar — spectrum poker with billionaire players."
+  },
+  "SPCX": {
+   "sector": "Space",
+   "blurb": "SpaceX exposure — the most wanted private stock on a public chain."
+  },
+  "OUST": {
+   "sector": "Lidar",
+   "blurb": "Lidar consolidation survivor."
+  },
+  "FICO": {
+   "sector": "Data",
+   "blurb": "The credit-score monopoly — pricing power in its purest form."
+  },
+  "HII": {
+   "sector": "Defense",
+   "blurb": "America's shipbuilder — navy budgets in ticker form."
+  },
+  "CTSH": {
+   "sector": "IT Services",
+   "blurb": "Outsourcing giant in the AI-deflation crosshairs."
+  },
+  "LHX": {
+   "sector": "Defense",
+   "blurb": "Defense electronics prime."
+  },
+  "KLAC": {
+   "sector": "Semis equipment",
+   "blurb": "Yield control — the highest-margin corner of chip equipment."
+  },
+  "GEV": {
+   "sector": "Power",
+   "blurb": "GE Vernova — turbines and grid gear for the electrification decade."
+  },
+  "PWR": {
+   "sector": "Infrastructure",
+   "blurb": "The grid's general contractor — AI power demand's builder."
+  },
+  "MPWR": {
+   "sector": "Semis",
+   "blurb": "Power management chips compounding quietly."
+  },
+  "SGOV": {
+   "sector": "Cash / T-Bills",
+   "blurb": "T-bill ETF — the 'risk-free' leg on-chain."
+  },
+  "SHY": {
+   "sector": "Bonds",
+   "blurb": "Short Treasuries — duration-lite safety."
+  },
+  "SCHD": {
+   "sector": "Dividend ETF",
+   "blurb": "The dividend crowd's default holding."
+  },
+  "XLK": {
+   "sector": "Index / Tech",
+   "blurb": "Tech sector ETF — mega-cap tech in one line."
+  },
+  "SOXX": {
+   "sector": "Index / Semis",
+   "blurb": "The semiconductor index — the whole chip trade at once."
+  },
+  "SMH": {
+   "sector": "Index / Semis",
+   "blurb": "The other semis ETF — NVDA-heavy by design."
+  },
+  "EWY": {
+   "sector": "Index / Korea",
+   "blurb": "Korea ETF — memory cycle plus won risk."
+  },
+  "EWT": {
+   "sector": "Index / Taiwan",
+   "blurb": "Taiwan ETF — TSMC with a passport."
+  },
+  "INDA": {
+   "sector": "Index / India",
+   "blurb": "India ETF — the other billion-person growth story."
+  },
+  "WYFI": {
+   "sector": "Small cap / Squeeze",
+   "blurb": "Tiny float, heavy short interest — a squeeze chassis more than a business."
+  }
+ },
+ "note": "editorial one-liners for narrative context; missing = we don't know it well enough to say"
+}
