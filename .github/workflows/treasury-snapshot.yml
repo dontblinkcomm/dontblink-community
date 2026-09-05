@@ -19,10 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: node scripts/treasury-ledger.mjs
+      # 标准代币清单 + logo 落地 —— 让 fomo / GMGN / GT 这类聚合器有地方读我们的图。
+      # 依赖 data/ours.json（由 muse-mini 的 cron 写），所以只读不写它，互不打架。
+      - run: node scripts/tokenlist.mjs
       - name: commit if changed
         run: |
           git config user.name dbc-bot
           git config user.email bot@dontblink.community
-          git add data/treasury.json
-          git diff --cached --quiet || git commit -m "treasury snapshot"
+          git add data/treasury.json data/tokenlist.json logos
+          git diff --cached --quiet || git commit -m "treasury snapshot + token list"
           git push
