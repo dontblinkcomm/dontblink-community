@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-05T19:38:53.933Z",
+ "timestamp": "2026-09-05T19:48:36.977Z",
  "version": {
   "major": 1,
-  "minor": 1,
+  "minor": 2,
   "patch": 0
  },
  "keywords": [
@@ -200,7 +200,8 @@
    "address": "0x11C10293fB59a6CFE75Ec01FC9B2a609E28a17BC",
    "name": "Power to the Players",
    "symbol": "POWERPLAY",
-   "decimals": 18
+   "decimals": 18,
+   "logoURI": "https://dontblink.community/logos/0x11c10293fb59a6cfe75ec01fc9b2a609e28a17bc.png"
   },
   {
    "chainId": 4663,

@@ -8,6 +8,7 @@
 //   v1：V3LaunchpadGatedMax.LaunchCreated（legacy/dontblink-family/tokens.json 是截至 08-15 的存档，
 //       这里在它之后继续扫链补新的）
 //   v2：DontblinkPortal.Launched（含 instant / curve / queue 三种模式）
+//       头像来自 LaunchMetadata（发射时）+ LaunchMetadataAmended（amendMetadata 改动）,同一 token 取最新
 // 行情从 GT 的 pools/multi 批量拿（有池子的才有）；内盘币没有池子，行情字段留空、mode 标出来。
 //
 // 输出 data/ours.json：{ at, tokens: [{token,pool,mode,name,symbol,createdBlock,gt?}] }
@@ -26,15 +27,26 @@ const CHUNK = 100_000
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 let rpcId = 0
+// 429 在这一层就重试:实测限流是**间歇的**(前一秒的探测能过,下一秒的调用被拒),
+// 而 eth_blockNumber / eth_call 这些裸调用原来没有任何重试 —— 砸中一次,整轮作废。
+const RPC_BACKOFF = [2_000, 5_000, 10_000, 20_000]
 async function rpc(method, params) {
-  const r = await fetch(RPC, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: ++rpcId, method, params }),
-  })
-  const j = await r.json()
-  if (j.error) throw new Error(`${method}: ${j.error.message}`)
-  return j.result
+  for (let tries = 0; ; tries++) {
+    const r = await fetch(RPC, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: ++rpcId, method, params }),
+    })
+    const j = await r.json()
+    if (j.error) {
+      if (tries < RPC_BACKOFF.length && /too many requests/i.test(String(j.error.message))) {
+        await sleep(RPC_BACKOFF[tries])
+        continue
+      }
+      throw new Error(`${method}: ${j.error.message}`)
+    }
+    return j.result
+  }
 }
 const hex = (n) => '0x' + n.toString(16)
 const addr = (topic) => '0x' + topic.slice(26).toLowerCase()
@@ -45,16 +57,20 @@ async function getLogs(address, topic0, from, to) {
   for (let a = from; a <= to; a += CHUNK) {
     const b = Math.min(a + CHUNK - 1, to)
     let logs
+    // 退避 2s → 10s:回扫这种上百 chunk 的量级,RPC 的 Too Many Requests 不是 2 秒能消的。
     for (let tries = 0; tries < 3; tries++) {
       try {
         logs = await rpc('eth_getLogs', [{ address, topics: [topic0], fromBlock: hex(a), toBlock: hex(b) }])
         break
       } catch (e) {
         if (tries === 2) throw e
-        await sleep(2000)
+        await sleep(tries === 0 ? 2000 : 10_000)
       }
     }
     out.push(...logs)
+    // chunk 之间歇一下 —— 连发一百多个 getLogs 实测会把整台机器的 RPC 配额打穿,
+    // 后面的 eth_call 全跟着 429。增量轮只有一两个 chunk,这点延迟无感。
+    if (b < to) await sleep(250)
   }
   return out
 }
@@ -194,6 +210,10 @@ try {
 // ---- v2 ----
 const MODE = ['instant', 'queue', 'curve']
 const V2_TOPIC_META = '0x81757bd4a3f7375c9021d3bd561d1a8075d765544734931f26896acacda7ccdc' // LaunchMetadata(token, imageURI, xUrl, webUrl, tgUrl, bio)
+// amendMetadata 发的是**另一个事件**，不是再发一次 LaunchMetadata —— 只订上面那个 topic
+// 就永远看不见改动。实证:POWERPLAY 09-04 用 amendMetadata 换了头像(tx 0xa94af8a8…2f54)，
+// 多轮快照后 ours.json 里仍是发射时那张。token/by 是 indexed，data 段同样是 5 个 string。
+const V2_TOPIC_META_AMENDED = '0x8d103f034f7a0b44c214bcf40bbfb4e2d41c6e4e40ecc0a4d2566959d0b210d0' // LaunchMetadataAmended(token, by, imageURI, xUrl, webUrl, tgUrl, bio)
 /** 解 ABI 里的动态 string（LaunchMetadata 的 data 段：5 个 string，头 5 个 word 是偏移） */
 function abiStrings(data, n) {
   const out = []
@@ -215,14 +235,25 @@ function imageFromTokenURI(uri) {
   }
 }
 const v2From = prevScan.v2 ? Math.max(V2_FROM_BLOCK, prevScan.v2 - OVERLAP) : V2_FROM_BLOCK
+// amend 事件走自己的游标:v2 游标早已越过历史上的 amend 块,没有这条游标就永远补不回
+// 已经错过的改动。首次(prev 里没有 v2meta)从 v2 部署块整段回扫一遍,之后每轮只扫增量。
+const metaFrom = prevScan.v2meta ? Math.max(V2_FROM_BLOCK, prevScan.v2meta - OVERLAP) : V2_FROM_BLOCK
 let v2ScannedTo = null
+let v2MetaScannedTo = null
 const v2Images = new Map()
 try {
-  for (const lg of await getLogs(V2_PORTAL, V2_TOPIC_META, v2From, head)) {
-    const [imageURI] = abiStrings(lg.data, 5)
+  const metaLogs = [
+    ...(await getLogs(V2_PORTAL, V2_TOPIC_META, v2From, head)),
+    ...(await getLogs(V2_PORTAL, V2_TOPIC_META_AMENDED, metaFrom, head)),
+  ]
+  // 同一 token 可能有多条元数据事件(发射一条 + 之后每次 amend 一条)——按链上顺序写入,最新的赢
+  metaLogs.sort((a, b) => parseInt(a.blockNumber, 16) - parseInt(b.blockNumber, 16) || parseInt(a.logIndex, 16) - parseInt(b.logIndex, 16))
+  for (const lg of metaLogs) {
+    const [imageURI] = abiStrings(lg.data, 5) // 两个事件的 indexed 参数都不占 data 段,布局同为 5 个 string
     const img = imageFromTokenURI(imageURI)
     if (img) v2Images.set(addr(lg.topics[1]), img)
   }
+  v2MetaScannedTo = head
 } catch (e) {
   scanFailed = true
   console.log('v2 metadata scan failed:', String(e).slice(0, 120))
@@ -241,7 +272,8 @@ try {
       creator: addr(lg.topics[3]),
       name: meta.name,
       symbol: meta.symbol,
-      imageUrl: v2Images.get(token) ?? null,
+      // 元数据扫描失败的那一轮 v2Images 是残缺的 —— 重扫 overlap 区间的币时别把上一版的图清成 null
+      imageUrl: v2Images.get(token) ?? prevByToken.get(token)?.imageUrl ?? null,
       createdBlock: parseInt(lg.blockNumber, 16),
       createdAt: null,
     })
@@ -543,6 +575,16 @@ if (scanFailed) {
   console.log(`链上扫描失败,从上一版补回 ${restored} 枚 —— 不用残缺的覆盖完整的`)
 }
 
+// **元数据更新要落到已知的币上,不能只落到本轮 Launched 日志里的币上。**
+// amendMetadata 改的多半是老币 —— 老币是 carryPrev 从上一版原样带过来的,不会再过
+// Launched 循环;只在那个循环里应用 v2Images,老币的头像就永远停在发射那一刻。
+let amended = 0
+for (const [token, img] of v2Images) {
+  const t = tokens.get(token)
+  if (t && t.imageUrl !== img) { t.imageUrl = img; amended++ }
+}
+if (amended) console.log(`元数据更新落到 ${amended} 枚已知币上`)
+
 const list = [...tokens.values()].filter((t) => !SUPERSEDED.has(t.token)).sort((a, b) => b.createdBlock - a.createdBlock)
 
 // 最后一道闸:扫描失败时列表**不许比上一版短**。补回逻辑应该已经保证了这一点,
@@ -556,6 +598,7 @@ await mkdir('data', { recursive: true })
 const scan = {
   v1: v1ScannedTo ?? prevScan.v1 ?? null,
   v2: v2ScannedTo ?? prevScan.v2 ?? null,
+  v2meta: v2MetaScannedTo ?? prevScan.v2meta ?? null,
 }
 await writeFile('data/ours.json', JSON.stringify({ at: fresh > 0 ? Date.now() : (prev?.at ?? Date.now()), scan, tokens: list }))
 console.log(`游标 → v1=${scan.v1} v2=${scan.v2}`)
