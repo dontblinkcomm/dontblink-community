@@ -90,6 +90,26 @@ const list = {
   tokens,
 }
 await writeFile('data/tokenlist.json', JSON.stringify(list, null, 1))
+
+// 每枚币一份元数据 JSON（/meta/<address>.json）—— 新版 BlinkToken 的
+// contractURI()/tokenURI() 指到这里（合约里是零存储的确定性 URL）。
+// **这些文件必须存在**：链上函数指向一个 404，比什么都没有更糟。
+await mkdir('meta', { recursive: true })
+let metaWrote = 0
+for (const t of tokens) {
+  const src = ours.tokens.find((x) => x.token.toLowerCase() === t.address.toLowerCase())
+  const meta = {
+    name: t.name,
+    symbol: t.symbol,
+    decimals: 18,
+    ...(t.logoURI ? { image: t.logoURI, logoURI: t.logoURI } : {}),
+    ...(src?.gt?.name ? {} : {}),
+    external_url: `https://dontblink.community/t/${(src?.pool || t.address).toLowerCase()}`,
+  }
+  await writeFile(`meta/${t.address.toLowerCase()}.json`, JSON.stringify(meta))
+  metaWrote++
+}
+console.log(`meta/: ${metaWrote} 份`)
 console.log(
   `tokenlist.json: 收录 ${stats.kept}/${stats.total}` +
   ` | 跳过 无池子 ${stats.noPool} / symbol 不合规 ${stats.badSymbol}` +
