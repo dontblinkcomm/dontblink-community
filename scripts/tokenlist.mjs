@@ -85,7 +85,7 @@ const list = {
   name: 'dontblink',
   timestamp: new Date().toISOString(),
   version,
-  keywords: ['dontblink', 'robinhood-chain', 'memecoin', 'launchpad'],
+  keywords: ['dontblink', 'robinhood chain', 'memecoin', 'launchpad'],
   logoURI: `${ORIGIN}/favicon.png`,
   tokens,
 }
