@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-06T21:09:53.401Z",
+ "timestamp": "2026-09-06T21:23:50.450Z",
  "version": {
   "major": 1,
-  "minor": 2,
+  "minor": 3,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,14 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0x8cDe0178A1AbD1622AEF593cc7328791cB9fdBDB",
+   "name": "Nofee.tax",
+   "symbol": "NOFEE",
+   "decimals": 18,
+   "logoURI": "https://dontblink.community/logos/0x8cde0178a1abd1622aef593cc7328791cb9fdbdb.jpg"
+  },
   {
    "chainId": 4663,
    "address": "0xFD13749a9a4BD039BB813F2957121d1069922caB",
