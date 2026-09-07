@@ -1238,10 +1238,10 @@
   </div>
   <textarea id="fb-text" placeholder="What did you expect, what happened instead — a screenshot link helps."></textarea>
   <div class="fb-acts">
-    <button class="cta" onclick="fbSend('tg')">Send via Telegram</button>
-    <button class="cta ghost" onclick="fbSend('x')">Post on X</button>
+    <button class="cta" onclick="fbSend('x')">Post on X</button>
+    <button class="cta ghost" onclick="fbSend('tg')">Copy &amp; open Telegram</button>
   </div>
-  <p id="fb-note" style="font-size:11px;color:var(--muted);margin:8px 0 0">Your note is copied to the clipboard on send — paste it if the app opens empty.</p>
+  <p id="fb-note" style="font-size:11px;color:var(--muted);margin:8px 0 0">Telegram route: your note is copied — just paste it into the chat.</p>
 </div>
 
 <script>
@@ -1353,8 +1353,8 @@ function fbSend(via){
  if(!txt){ document.getElementById('fb-text').focus(); return; }
  const msg='['+cat+'] '+txt+' — dontblink.community/demo';
  try{ navigator.clipboard.writeText(msg) }catch(e){}
- const n=document.getElementById('fb-note'); n.textContent='Copied ✓ — opening '+(via==='tg'?'Telegram':'X')+'…';
- if(via==='tg') window.open('https://t.me/share/url?url='+encodeURIComponent('https://dontblink.community/demo')+'&text='+encodeURIComponent(msg),'_blank');
+ const n=document.getElementById('fb-note'); n.textContent = via==='tg' ? 'Copied ✓ — opening the chat, paste your note there.' : 'Copied ✓ — opening X…';
+ if(via==='tg') window.open('https://t.me/dontblink_cto','_blank');
  else window.open('https://x.com/intent/tweet?text='+encodeURIComponent(msg+' @dontblink_cto'),'_blank');
 }
 function alToggle(){ document.body.classList.toggle('al-off');
