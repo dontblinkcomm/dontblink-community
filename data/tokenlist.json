@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-08T17:56:55.325Z",
+ "timestamp": "2026-09-08T18:17:08.160Z",
  "version": {
   "major": 1,
-  "minor": 7,
+  "minor": 8,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,13 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0x9f320d6F517a14f274983b8F18163fAD9498721E",
+   "name": "AAPL sale drill #3 (fast)",
+   "symbol": "AAPLDRILL3",
+   "decimals": 18
+  },
   {
    "chainId": 4663,
    "address": "0x4B73bed47d8fA2365499450bD1E7AAB59a0bb5d3",
