@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-08T20:11:03.060Z",
+ "timestamp": "2026-09-08T20:31:19.418Z",
  "version": {
   "major": 1,
-  "minor": 8,
+  "minor": 9,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,20 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0x862434f9286AAffF8073CD461b78ee9956DA4e1E",
+   "name": "AAPL sale, overnight full run",
+   "symbol": "AAPLTESTDAY",
+   "decimals": 18
+  },
+  {
+   "chainId": 4663,
+   "address": "0x18e91c1fb46140C844eDaAccd5A479532fF7D040",
+   "name": "AAPL sale, overnight full run",
+   "symbol": "AAPLNIGHT",
+   "decimals": 18
+  },
   {
    "chainId": 4663,
    "address": "0x9f320d6F517a14f274983b8F18163fAD9498721E",
