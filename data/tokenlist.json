@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-08T17:00:09.895Z",
+ "timestamp": "2026-09-08T17:18:39.287Z",
  "version": {
   "major": 1,
-  "minor": 6,
+  "minor": 7,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,13 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0x4B73bed47d8fA2365499450bD1E7AAB59a0bb5d3",
+   "name": "AAPL sale drill #2",
+   "symbol": "AAPLDRILL2",
+   "decimals": 18
+  },
   {
    "chainId": 4663,
    "address": "0x48F237c4e473B2D4dE39d98B58cEB75a2A302595",
