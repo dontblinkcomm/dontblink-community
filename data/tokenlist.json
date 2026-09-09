@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-09T10:00:40.309Z",
+ "timestamp": "2026-09-09T10:41:44.363Z",
  "version": {
   "major": 1,
-  "minor": 14,
+  "minor": 15,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,14 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0x7A457335aBF6Cc01F4580F1210e2f807F992a39b",
+   "name": "ipads",
+   "symbol": "IPADS",
+   "decimals": 18,
+   "logoURI": "https://dontblink.community/logos/0x7a457335abf6cc01f4580f1210e2f807f992a39b.jpg"
+  },
   {
    "chainId": 4663,
    "address": "0xCCa6Edc60F0132Cd4206754f9d30e79cfDbebe0A",
