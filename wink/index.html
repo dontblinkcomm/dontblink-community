@@ -83,7 +83,6 @@
     <h2>Launch · wink mode</h2>
     <div class="note" style="margin-top:0">One transaction deploys the whole package: token + NVDA-quoted pool with the 3.3% tax wired, floor vault, converter, treasury escrow, platform sink — then self-checks the wiring and reverts if anything is off. The economics are burned into the launcher's bytecode; only identity fields below are yours to choose. You launch from your own wallet — the platform never touches it.</div>
     <div class="row"><input id="lName" placeholder="Token name (e.g. WINK)" style="flex:1"><input id="lSymbol" placeholder="Symbol" style="flex:1"></div>
-    <div class="row"><input id="lBen" placeholder="Your fee address (layer-1 share)"></div>
     <div class="row"><input id="lTreasury" placeholder="Treasury beneficiary (escrow proceeds go here)"></div>
     <div class="row"><input id="lOperator" placeholder="Treasury operator (may trigger escrow burns)"></div>
     <div class="row"><button id="doLaunch" disabled>Launch</button><span class="note">connect wallet first · gas ≈ 5M</span></div>
@@ -228,9 +227,9 @@ every WINK/NVDA trade
   document.getElementById("escClaim").onclick = async () => { await send(ESCROW, S.escClaim); refresh(); };
 
   // ==== wink mode 发射(结构焊死在发射器字节码里,这里只收身份参数) ====
-  const LAUNCHER = "0xaaE8cBEb197d614ee42ba0E014df65bcD47992a7";
+  const LAUNCHER = "0xE75303E87B1620BdFe3D50a05a6B36f294993092"; // v2:0.3% 层全归平台
   const NVDA = "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC";
-  const LAUNCH_SEL = "0xabcc43b0"; // launch((string,string,string,address,address,address,address,uint256,bytes32))
+  const LAUNCH_SEL = "0x89d79829"; // launch((string,string,string,address,address,address,uint256,bytes32))
   const LAUNCH_TOPIC = "0x23bb79ba8d70069c7ce173aefc71b8653ddd7335a04c12ee74532e41d9f8e457";
   const lMsg = t => document.getElementById("lMsg").textContent = t;
   const encStr = s => {
@@ -239,31 +238,32 @@ every WINK/NVDA trade
     const padded = hex.padEnd(Math.ceil(b.length/32)*64 || 64, "0");
     return { len: padN(BigInt(b.length)), data: padded, slots: 1 + (padded.length/64) };
   };
-  function encodeLaunch(name, symbol, uri, ben, treas, op, salt) {
+  function encodeLaunch(name, symbol, uri, treas, op, salt) {
     const sN = encStr(name), sS = encStr(symbol), sU = encStr(uri);
-    const HEAD = 9 * 32;
+    const HEAD = 8 * 32;
     const off1 = HEAD, off2 = off1 + sN.slots*32, off3 = off2 + sS.slots*32;
     const tuple =
       padN(BigInt(off1)) + padN(BigInt(off2)) + padN(BigInt(off3)) +
-      pad(NVDA) + pad(ben) + pad(treas) + pad(op) +
+      pad(NVDA) + pad(treas) + pad(op) +
       padN(0n) + salt.replace("0x","") +
       sN.len + sN.data + sS.len + sS.data + sU.len + sU.data;
     return LAUNCH_SEL + padN(32n) + tuple;
   }
-  const lInputs = ["lName","lSymbol","lBen","lTreasury","lOperator"];
+  const lInputs = ["lName","lSymbol","lTreasury","lOperator"];
   const lCheck = () => {
     const vals = lInputs.map(i => document.getElementById(i).value.trim());
     document.getElementById("doLaunch").disabled =
       !acct || vals.some(v => !v) || vals.slice(2).some(v => !/^0x[0-9a-fA-F]{40}$/.test(v));
+    // vals: [name, symbol, treasury, operator] —— 后两项须为地址
   };
   lInputs.forEach(i => document.getElementById(i).addEventListener("input", lCheck));
   document.getElementById("connect").addEventListener("click", () => setTimeout(lCheck, 1500));
   document.getElementById("doLaunch").onclick = async () => {
-    const [name, symbol, ben, treas, op] = lInputs.map(i => document.getElementById(i).value.trim());
+    const [name, symbol, treas, op] = lInputs.map(i => document.getElementById(i).value.trim());
     const rnd = new Uint8Array(32); crypto.getRandomValues(rnd);
     let salt = "0x"; rnd.forEach(x => salt += x.toString(16).padStart(2,"0"));
     lMsg("launching… salt " + salt);
-    const data = encodeLaunch(name, symbol, "data:,"+symbol, ben, treas, op, salt);
+    const data = encodeLaunch(name, symbol, "data:,"+symbol, treas, op, salt);
     const h = await ethereum.request({method:"eth_sendTransaction", params:[{from: acct, to: LAUNCHER, data}]});
     lMsg("tx " + h + " — waiting…");
     for (let i = 0; i < 90; i++) {
