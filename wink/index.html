@@ -1,0 +1,216 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8">
+<title>WINK Reserve — dontblink</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* 有意的单主题:站内暗色世界,与 /demo /harness 同门。 */
+  :root {
+    --bg: #05060b; --panel: #0c0e18; --panel2: #12142275;
+    --line: #22243a; --text: #eceaff; --muted: #7c8093;
+    --accent: #7b6cf6; --accent-deep: #5b46d6; --good: #4ade80; --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Instrument Sans", system-ui, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-family: Quicksand, sans-serif; font-size: 26px; }
+  h2 { font-family: Quicksand, sans-serif; font-size: 16px; margin-bottom: 10px; color: var(--accent); }
+  .sub { color: var(--muted); font-size: 13px; margin: 6px 0 20px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .stat { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .stat .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  .stat .v { font-family: "JetBrains Mono", monospace; font-size: 16px; margin-top: 4px; word-break: break-all; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 10px; padding: 12px 18px; font: 600 14px "Instrument Sans", sans-serif; cursor: pointer; }
+  button:hover { background: var(--accent-deep); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  input { background: #090a12; border: 1px solid var(--line); border-radius: 10px; color: var(--text); font: 500 16px "JetBrains Mono", monospace; padding: 12px; width: 100%; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 8px; line-height: 1.5; }
+  .pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 11px; color: var(--warn); }
+  .ok { color: var(--good); }
+  a { color: var(--accent); }
+  #msg { font-family: "JetBrains Mono", monospace; font-size: 12px; margin-top: 10px; word-break: break-all; }
+</style>
+<div class="wrap">
+  <h1>WINK Reserve <span class="pill" id="envpill">DRILL · mainnet rehearsal</span></h1>
+  <p class="sub">Redeem &amp; burn WINK at the reserve floor · build permanent reward weight · dividends in BLINK.
+  Contracts are immutable: no owner, no withdraw, no route changes. <a href="https://robinhoodchain.blockscout.com/address/0x9f09de3f3fdacb1bd12d679c75be4c3be7af9f36" target="_blank">verify on-chain ↗</a></p>
+
+  <div class="card">
+    <h2>Round reserve</h2>
+    <div class="grid">
+      <div class="stat"><div class="k">Round</div><div class="v" id="round">—</div></div>
+      <div class="stat"><div class="k">Quota left (WINK)</div><div class="v" id="quota">—</div></div>
+      <div class="stat"><div class="k">BLINK reserve</div><div class="v" id="reserve">—</div></div>
+      <div class="stat"><div class="k">Floor price (BLINK/WINK)</div><div class="v" id="floor">—</div></div>
+      <div class="stat"><div class="k">Total burned weight</div><div class="v" id="tshares">—</div></div>
+      <div class="stat"><div class="k">Reward pool (BLINK)</div><div class="v" id="rpool">—</div></div>
+    </div>
+    <div class="note">Floor price = BLINK reserve ÷ remaining quota. Redeeming does not move the price; new tax inflow raises it. 100,000,000 WINK per round, rounds advance on global cumulative burn — a single redeem may cross several rounds.</div>
+  </div>
+
+  <div class="card">
+    <h2>Redeem &amp; burn</h2>
+    <div class="row"><button id="connect">Connect wallet</button><span id="acct" class="note"></span></div>
+    <div class="row">
+      <input id="amt" placeholder="WINK amount (min 10,000)" inputmode="decimal">
+      <button id="doRedeem" disabled>Redeem</button>
+    </div>
+    <div class="grid" style="margin-top:12px">
+      <div class="stat"><div class="k">Your WINK</div><div class="v" id="myBal">—</div></div>
+      <div class="stat"><div class="k">Est. BLINK out</div><div class="v" id="est">—</div></div>
+      <div class="stat"><div class="k">Your burn weight</div><div class="v" id="myShares">—</div></div>
+      <div class="stat"><div class="k">Claimable BLINK</div><div class="v" id="myOwed">—</div></div>
+    </div>
+    <div class="row"><button id="doClaim" class="ghost" disabled>Claim rewards</button></div>
+    <div class="note">Minimum 10,000 WINK per redeem. If the reserve is empty your payout is 0, but the burn succeeds and your weight still grows — weight is permanent, never reduced by claiming. Everyone follows the same rule, project treasury included.</div>
+    <div id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Project treasury escrow</h2>
+    <div class="grid">
+      <div class="stat"><div class="k">Escrowed WINK</div><div class="v" id="escBal">—</div></div>
+      <div class="stat"><div class="k">Escrow burn weight</div><div class="v" id="escShares">—</div></div>
+      <div class="stat"><div class="k">Escrow claimable</div><div class="v" id="escOwed">—</div></div>
+    </div>
+    <div class="row"><button id="escClaim" class="ghost" disabled>Claim for treasury (permissionless)</button></div>
+    <div class="note">The project treasury's WINK sits in <a id="escLink" target="_blank">an escrow contract ↗</a> whose only exit is redeem-and-burn. All proceeds and dividends are hardwired to the treasury's own address — the platform can trigger, but can never take. No withdraw, no setters, no owner.</div>
+  </div>
+
+  <div class="card">
+    <h2>Where the tax goes</h2>
+    <div class="note" style="font-family:'JetBrains Mono',monospace; white-space:pre; overflow-x:auto; margin-top:0">
+every WINK/NVDA trade
+ └─ 3.3% pool-level tax (both directions, permanent)
+     ├─ rail protocol share 5%
+     ├─ 0.3% → dontblink platform
+     └─ 3.0% → WINK mechanism (converted to BLINK)
+          ├─ before first valid redeem: 100% → reserve
+          └─ after: 2/3 → reserve · 1/3 → burn-weight rewards</div>
+  </div>
+</div>
+<script>
+(() => {
+  // ==== DRILL CONFIG —— 正式发射当天只改这一块 ====
+  const RPC = "https://rpc.mainnet.chain.robinhood.com";
+  const CHAIN_HEX = "0x1237"; // 4663
+  const VAULT  = "0x9f09de3f3fdacb1bd12d679c75be4c3be7af9f36";
+  const WINK   = "0xCCa6Edc60F0132Cd4206754f9d30e79cfDbebe0A"; // drill: WINKPROBE
+  const ESCROW = "0x835e9d648732cf403c53ca1b403368e806b2d38d";
+  const QUOTA  = 100000000n * 10n**18n;
+  const MIN    = 10000n * 10n**18n;
+  document.getElementById("escLink").href = "https://robinhoodchain.blockscout.com/address/" + ESCROW;
+
+  const S = { reserve:"0xa10954fe", quota:"0x8157dfe1", round:"0x8a19c8bc", floor:"0x0fb1b649",
+    tshares:"0xd83c599e", rpool:"0x087aa312", sharesOf:"0x8c02d411", owed:"0x071bbd03",
+    redeem:"0x7bde82f2", claimTo:"0x1e83409a", approve:"0x095ea7b3", allowance:"0xdd62ed3e",
+    balOf:"0x70a08231", escClaim:"0x4e71d92d" };
+  const pad = a => a.toLowerCase().replace("0x","").padStart(64,"0");
+  const padN = n => n.toString(16).padStart(64,"0");
+  let acct = null, id = 0;
+
+  async function rpc(method, params) {
+    const r = await fetch(RPC, { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({jsonrpc:"2.0", id:++id, method, params}) });
+    const j = await r.json();
+    if (j.error) throw new Error(j.error.message);
+    return j.result;
+  }
+  const call = async (to, data) => BigInt(await rpc("eth_call", [{to, data}, "latest"]) || "0x0");
+  const fmt = (x, dp=2) => {
+    const s = (Number(x) / 1e18);
+    return s >= 1e6 ? (s/1e6).toFixed(2)+"M" : s.toLocaleString(undefined,{maximumFractionDigits: s<1?8:dp});
+  };
+
+  async function refresh() {
+    try {
+      const [reserve, quota, round, floor, tshares, rpool, escB, escS, escO] = await Promise.all([
+        call(VAULT,S.reserve), call(VAULT,S.quota), call(VAULT,S.round), call(VAULT,S.floor),
+        call(VAULT,S.tshares), call(VAULT,S.rpool),
+        call(WINK, S.balOf+pad(ESCROW)), call(VAULT, S.sharesOf+pad(ESCROW)), call(VAULT, S.owed+pad(ESCROW)),
+      ]);
+      const set = (i,v) => document.getElementById(i).textContent = v;
+      set("round", round.toString()); set("quota", fmt(quota)); set("reserve", fmt(reserve,4));
+      set("floor", quota ? (Number(reserve)/Number(quota)).toExponential(3) : "—");
+      set("tshares", fmt(tshares)); set("rpool", fmt(rpool,6));
+      set("escBal", fmt(escB)); set("escShares", fmt(escS)); set("escOwed", fmt(escO,6));
+      document.getElementById("escClaim").disabled = !(acct && escO > 0n);
+      window.__state = {reserve, quota};
+      if (acct) {
+        const [b, sh, ow] = await Promise.all([
+          call(WINK, S.balOf+pad(acct)), call(VAULT, S.sharesOf+pad(acct)), call(VAULT, S.owed+pad(acct))]);
+        set("myBal", fmt(b)); set("myShares", fmt(sh)); set("myOwed", fmt(ow,6));
+        document.getElementById("doClaim").disabled = ow === 0n;
+      }
+    } catch(e) { msg("read error: " + e.message); }
+  }
+
+  // 前端报价:与合约同一套逐轮切片
+  function estimate(amountWei) {
+    let {reserve, quota} = window.__state || {}; if (reserve === undefined) return null;
+    let left = amountWei, out = 0n, R = reserve, Q = quota;
+    while (left > 0n) {
+      const take = left < Q ? left : Q;
+      const slice = Q === 0n ? 0n : take * R / Q;
+      R -= slice; Q -= take; out += slice; left -= take;
+      if (Q === 0n) { Q = QUOTA; } // 新轮:演练/正式都是空储备起步
+    }
+    return out;
+  }
+  document.getElementById("amt").addEventListener("input", ev => {
+    const v = ev.target.value.replace(/[^\d.]/g,""); if (!v) return document.getElementById("est").textContent = "—";
+    try {
+      const wei = BigInt(Math.floor(parseFloat(v))) * 10n**18n;
+      const e = estimate(wei);
+      document.getElementById("est").textContent = e === null ? "—" : fmt(e,6);
+      document.getElementById("doRedeem").disabled = !acct || wei < MIN;
+    } catch { }
+  });
+
+  const msg = t => document.getElementById("msg").textContent = t;
+
+  async function ensureChain() {
+    try { await ethereum.request({method:"wallet_switchEthereumChain", params:[{chainId:CHAIN_HEX}]}); }
+    catch (e) {
+      if (e.code === 4902) await ethereum.request({method:"wallet_addEthereumChain", params:[{
+        chainId: CHAIN_HEX, chainName: "Robinhood Chain",
+        nativeCurrency: {name:"Ether", symbol:"ETH", decimals:18},
+        rpcUrls: [RPC], blockExplorerUrls: ["https://robinhoodchain.blockscout.com"] }]});
+      else throw e;
+    }
+  }
+  async function send(to, data) {
+    const h = await ethereum.request({method:"eth_sendTransaction", params:[{from: acct, to, data}]});
+    msg("tx sent: " + h + " — waiting…");
+    for (let i=0;i<60;i++) { await new Promise(r=>setTimeout(r,2000));
+      const rec = await rpc("eth_getTransactionReceipt",[h]);
+      if (rec) { msg((rec.status==="0x1"?"✓ confirmed ":"✗ REVERTED ") + h); return rec.status==="0x1"; } }
+    msg("timeout waiting for " + h); return false;
+  }
+
+  document.getElementById("connect").onclick = async () => {
+    if (!window.ethereum) return msg("no wallet found — open in a wallet browser");
+    await ensureChain();
+    [acct] = await ethereum.request({method:"eth_requestAccounts"});
+    document.getElementById("acct").textContent = acct;
+    document.getElementById("connect").textContent = "Connected";
+    refresh();
+  };
+  document.getElementById("doRedeem").onclick = async () => {
+    const v = document.getElementById("amt").value.replace(/[^\d.]/g,"");
+    const wei = BigInt(Math.floor(parseFloat(v))) * 10n**18n;
+    if (wei < MIN) return msg("minimum is 10,000 WINK");
+    const allow = await call(WINK, S.allowance + pad(acct) + pad(VAULT));
+    if (allow < wei) { msg("approving…"); if (!await send(WINK, S.approve + pad(VAULT) + padN(wei))) return; }
+    msg("redeeming…");
+    await send(VAULT, S.redeem + padN(wei) + pad(acct));
+    refresh();
+  };
+  document.getElementById("doClaim").onclick = async () => { await send(VAULT, S.claimTo + pad(acct)); refresh(); };
+  document.getElementById("escClaim").onclick = async () => { await send(ESCROW, S.escClaim); refresh(); };
+
+  refresh(); setInterval(refresh, 15000);
+})();
+</script>
