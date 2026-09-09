@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-09T08:00:47.843Z",
+ "timestamp": "2026-09-09T08:20:09.468Z",
  "version": {
   "major": 1,
-  "minor": 12,
+  "minor": 13,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,21 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0x95Ca4e5C0dB835A4D25B2b7aAD04191887297e7D",
+   "name": "ipxs",
+   "symbol": "IPXS",
+   "decimals": 18,
+   "logoURI": "https://gmgn.ai/external-res/e3574a5b9944f8d534f6969c083a1b9a_v2l.webp"
+  },
+  {
+   "chainId": 4663,
+   "address": "0x86591e5dfF2d7bcB89cCC1C47e13992f61DbdBDB",
+   "name": "ipx",
+   "symbol": "IPX",
+   "decimals": 18
+  },
   {
    "chainId": 4663,
    "address": "0x072a48474d08563745F6d6365a7599aBeadbdbDB",
