@@ -132,7 +132,9 @@ every WINK/NVDA trade
         call(WINK, S.balOf+pad(ESCROW)), call(VAULT, S.sharesOf+pad(ESCROW)), call(VAULT, S.owed+pad(ESCROW)),
       ]);
       const set = (i,v) => document.getElementById(i).textContent = v;
-      set("round", round.toString()); set("quota", fmt(quota)); set("reserve", fmt(reserve,4));
+      // 轮号封顶显示:烧满 10 亿的终态轮 11 只是自增痕迹,永远不会有交易发生
+      set("round", round > 10n ? "FINAL" : round.toString());
+      set("quota", fmt(quota)); set("reserve", fmt(reserve,4));
       set("floor", quota ? (Number(reserve)/Number(quota)).toExponential(3) : "—");
       set("tshares", fmt(tshares)); set("rpool", fmt(rpool,6));
       set("escBal", fmt(escB)); set("escShares", fmt(escS)); set("escOwed", fmt(escO,6));
