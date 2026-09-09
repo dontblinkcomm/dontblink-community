@@ -33,9 +33,9 @@
   #msg { font-family: "JetBrains Mono", monospace; font-size: 12px; margin-top: 10px; word-break: break-all; }
 </style>
 <div class="wrap">
-  <h1>WINK Reserve <span class="pill" id="envpill">DRILL · mainnet rehearsal</span></h1>
+  <h1>WINK Reserve <span class="pill" id="envpill">DRILL 2 · NVDA pool · live 3.3% tax</span></h1>
   <p class="sub">Redeem &amp; burn WINK at the reserve floor · build permanent reward weight · dividends in BLINK.
-  Contracts are immutable: no owner, no withdraw, no route changes. <a href="https://robinhoodchain.blockscout.com/address/0x9f09de3f3fdacb1bd12d679c75be4c3be7af9f36" target="_blank">verify on-chain ↗</a></p>
+  Contracts are immutable: no owner, no withdraw, no route changes. <a href="https://robinhoodchain.blockscout.com/address/0x4867cd0b37aca39e1572a7d87af6c922a155533c" target="_blank">verify on-chain ↗</a></p>
 
   <div class="card">
     <h2>Round reserve</h2>
@@ -96,9 +96,9 @@ every WINK/NVDA trade
   // ==== DRILL CONFIG —— 正式发射当天只改这一块 ====
   const RPC = "https://rpc.mainnet.chain.robinhood.com";
   const CHAIN_HEX = "0x1237"; // 4663
-  const VAULT  = "0x9f09de3f3fdacb1bd12d679c75be4c3be7af9f36";
-  const WINK   = "0xCCa6Edc60F0132Cd4206754f9d30e79cfDbebe0A"; // drill: WINKPROBE
-  const ESCROW = "0x835e9d648732cf403c53ca1b403368e806b2d38d";
+  const VAULT  = "0x4867cd0b37aca39e1572a7d87af6c922a155533c";
+  const WINK   = "0x5ea5132ebdb1f4bd41f5b90ca43d7e2256454534"; // drill2: WTAXD(NVDA 底池,真 3.3% 税)
+  const ESCROW = "0x3572e3b93dfdfc0361edb93dfcfc62ca3b70b198";
   const QUOTA  = 100000000n * 10n**18n;
   const MIN    = 10000n * 10n**18n;
   document.getElementById("escLink").href = "https://robinhoodchain.blockscout.com/address/" + ESCROW;
