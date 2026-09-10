@@ -208,7 +208,19 @@ try {
 }
 
 // ---- v2 ----
-const MODE = ['instant', 'queue', 'curve']
+// mode=3(Handler,固定价公募等注册表玩法)曾缺映射 → 被记成 instant+null 池,
+// 前端把「即时盘却没池子」当异常行吞掉 —— 09-10 APPA 不上榜的病根。
+const MODE = ['instant', 'queue', 'curve', 'sale']
+const SPLIT_SALE = '0x1edcf858ef8b95bff17d0194016b5169ea0ab3b4'
+// 固定价公募的池子在**结算时**才诞生,Launched 事件里恒为 0 —— 每轮补查 saleResult。
+async function salePool(token) {
+  try {
+    const data = await rpc('eth_call', [{ to: SPLIT_SALE, data: '0xa0aa4774' + token.slice(2).toLowerCase().padStart(64, '0') }, 'latest'])
+    if (!data || data.length < 130) return null
+    const pool = '0x' + data.slice(2 + 64 + 24, 2 + 128)
+    return /^0x0+$/.test(pool) ? null : pool
+  } catch { return null }
+}
 const V2_TOPIC_META = '0x81757bd4a3f7375c9021d3bd561d1a8075d765544734931f26896acacda7ccdc' // LaunchMetadata(token, imageURI, xUrl, webUrl, tgUrl, bio)
 // amendMetadata 发的是**另一个事件**，不是再发一次 LaunchMetadata —— 只订上面那个 topic
 // 就永远看不见改动。实证:POWERPLAY 09-04 用 amendMetadata 换了头像(tx 0xa94af8a8…2f54)，
@@ -263,7 +275,8 @@ try {
   for (const lg of logs) {
     const token = addr(lg.topics[2])
     const mode = MODE[parseInt(word(lg.data, 1), 16)] ?? 'instant'
-    const pool = '0x' + word(lg.data, 3).slice(24)
+    let pool = '0x' + word(lg.data, 3).slice(24)
+    if (mode === 'sale' && /^0x0+$/.test(pool)) pool = (await salePool(token)) ?? pool
     const meta = prevByToken.get(token) ?? (await erc20Meta(token))
     tokens.set(token, {
       token,
