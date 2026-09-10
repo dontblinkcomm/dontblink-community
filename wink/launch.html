@@ -1,0 +1,498 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8">
+<title>wink mode 自助发射台 — dontblink</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #05060b; --panel: #0c0e18; --panel2: #12142275;
+    --line: #22243a; --text: #eceaff; --muted: #7c8093;
+    --accent: #7b6cf6; --accent-deep: #5b46d6; --good: #4ade80; --warn: #fbbf24; --bad: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Instrument Sans", system-ui, sans-serif; min-height: 100vh; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-family: Quicksand, sans-serif; font-size: 24px; }
+  h2 { font-family: Quicksand, sans-serif; font-size: 15px; margin-bottom: 10px; color: var(--accent); }
+  .sub { color: var(--muted); font-size: 13px; margin: 6px 0 20px; line-height: 1.6; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 10px; padding: 12px 18px; font: 600 14px "Instrument Sans", sans-serif; cursor: pointer; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+  input[type=text], textarea { background: #090a12; border: 1px solid var(--line); border-radius: 10px; color: var(--text); font: 500 14px "JetBrains Mono", monospace; padding: 11px; width: 100%; }
+  input.bad { border-color: var(--bad); }
+  textarea { font-family: "Instrument Sans", sans-serif; resize: vertical; }
+  label.f { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 6px; }
+  label.f b { color: var(--text); font-weight: 600; font-size: 13px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+  .note { color: var(--muted); font-size: 12px; margin-top: 6px; line-height: 1.6; }
+  .note b { color: var(--text); }
+  label.chk { display: flex; gap: 8px; align-items: center; font-size: 13px; margin-top: 8px; color: var(--muted); }
+  #logoPrev { width: 72px; height: 72px; border-radius: 16px; border: 1px solid var(--line); object-fit: cover; display: none; }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  #msg, .status { font-family: "JetBrains Mono", monospace; font-size: 12px; margin-top: 10px; word-break: break-all; white-space: pre-wrap; line-height: 1.7; }
+  .ok { color: var(--good); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  .drop { border: 2px dashed var(--line); border-radius: 14px; padding: 18px; text-align: center; color: var(--muted); cursor: pointer; font-size: 13px; }
+  .locked { border-left: 3px solid var(--accent-deep); padding-left: 14px; }
+  .locked li { color: var(--muted); font-size: 13px; line-height: 1.9; list-style: none; }
+  .locked li b { color: var(--text); }
+  .addr { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--good); word-break: break-all; }
+  a { color: var(--accent); }
+</style>
+<div class="wrap">
+  <h1>wink mode · 自助发射台</h1>
+  <p class="sub">按 <b>WINK 同构结构</b>发射你自己的盘:所有参数自己填、自己的钱包自己发,发几次都可以。
+  经济结构焊死在发射器字节码里,页面只收身份参数 —— <b>用这个模式发射本身就是合规声明</b>。
+  一笔交易原子出全套(代币 + 托底金库 + 税转换器 + 只烧托管 + 建池挂税),发射后自检不过整笔回滚。</p>
+
+  <div class="card">
+    <h2>结构(焊死,不可配置)</h2>
+    <ul class="locked">
+      <li><b>总税 3.3%</b>(两层复合):0.3% 平台层 + 3.0% 机制层(2% 轮次托底 + 1% 销毁权重分红)</li>
+      <li>开盘防狙击:首 15 秒 80% 税率线性衰减到 3.0%</li>
+      <li>税全部自动换 BLINK 进轮次托底金库;项目方金库份额走<b>只烧不跑</b>托管</li>
+      <li>治理钥匙发射即烧毁 —— 参数永久终态,谁也改不了(包括我们)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>① 代币身份</h2>
+    <div class="grid2">
+      <div><label class="f"><b>名称</b></label><input type="text" id="name" placeholder="Wink"></div>
+      <div><label class="f"><b>符号</b></label><input type="text" id="symbol" placeholder="WINK"></div>
+    </div>
+    <label class="f"><b>简介</b>(可选,写进链上元数据)</label>
+    <textarea id="desc" rows="2" placeholder=""></textarea>
+    <label class="f"><b>Logo</b>(压缩后直接上链,永久)</label>
+    <div class="drop" id="drop">点击或拖入 Logo 图片</div>
+    <input type="file" id="file" accept="image/*" style="display:none">
+    <div class="row"><img id="logoPrev"><span class="note" id="logoInfo"></span></div>
+  </div>
+
+  <div class="card">
+    <h2>② 市场参数</h2>
+    <label class="f"><b>计价币</b>(底池配对资产,默认 NVDA)</label>
+    <input type="text" id="numeraire" value="0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC">
+    <div class="note" id="numInfo"></div>
+    <label class="f"><b>开盘 tick</b>(8 的倍数,区间 -299999 ~ -51304;越小开盘估值越低)</label>
+    <input type="text" id="tick" placeholder="-174552">
+    <div class="note" id="tickInfo">对应开盘 FDV:—</div>
+    <div class="grid2">
+      <div>
+        <label class="f">或按 <b>目标 FDV(计价币计)</b>反推</label>
+        <input type="text" id="fdvIn" placeholder="26.28">
+      </div>
+      <div>
+        <label class="f"><b>计价币现价 $</b>(可选,仅用于显示美元估值)</label>
+        <input type="text" id="px" placeholder="">
+      </div>
+    </div>
+    <label class="f"><b>转换器单次限额</b>(计价币枚数,0 = 不限;防单笔巨额转换砸滑点)</label>
+    <input type="text" id="maxSync" value="0">
+  </div>
+
+  <div class="card">
+    <h2>③ 你的收款与托管地址</h2>
+    <label class="f"><b>托管受益地址</b>(托管兑换产出的唯一去向 —— 写错永远改不了,务必自控钱包)</label>
+    <input type="text" id="benef" placeholder="0x…">
+    <label class="f"><b>托管触发地址</b>(谁有权触发兑换销毁)</label>
+    <input type="text" id="oper" placeholder="0x…">
+    <label class="chk"><input type="checkbox" id="sameAddr" checked> 触发地址同受益地址</label>
+  </div>
+
+  <div class="card">
+    <h2>④ 代币地址(靓号自动挖)</h2>
+    <div class="status" id="mineInfo">初始化…</div>
+    <div class="note">预测地址:<span class="addr" id="predAddr">—</span></div>
+    <label class="chk"><input type="checkbox" id="customSaltChk"> 使用自备盐(高级;从别处挖好的盐粘贴到这里)</label>
+    <input type="text" id="customSalt" placeholder="0x + 64 位十六进制" style="display:none">
+    <div class="note">盐在<b>你的浏览器本地</b>随机生成/挖矿,不经过任何服务器;上链前对外保密。</div>
+  </div>
+
+  <div class="card">
+    <h2>⑤ 发射</h2>
+    <div class="row">
+      <button id="connect">连接钱包</button>
+      <button id="launch" disabled>发射</button>
+      <button id="again" class="ghost" style="display:none">再发一枚(换新盐)</button>
+    </div>
+    <div class="note">发射约消耗 500 万 gas(几美分),钱包里备一点 RH 链 ETH。发射即终态,发前逐项核对。</div>
+    <div id="msg"></div>
+  </div>
+</div>
+<script>
+(() => {
+  "use strict";
+  // ───────────────────────── 链与合约常量(与 WinkModeLauncher v3 一致)
+  const RPC = "https://rpc.mainnet.chain.robinhood.com";
+  const CHAIN_HEX = "0x1237";
+  const EXPLORER = "https://robinhoodchain.blockscout.com";
+  const LAUNCHER = "0xEd37ED0e988DA716C3F2Bb499E64E0b83F4863b8";
+  const TOKEN_FACTORY = "0x1B37D3a72082029c44B35B604Ea473617580b69a";
+  const NVDA = "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC";
+  const LAUNCH_SEL = "0xd14414c2"; // launch((string,string,string,address,int24,address,address,uint256,bytes32))
+  const LAUNCH_TOPIC = "0x23bb79ba8d70069c7ce173aefc71b8653ddd7335a04c12ee74532e41d9f8e457";
+  const SEL_IMPL = "0x3a4741bd";    // IMPLEMENTATION()
+  const SEL_PREDICT = "0x61fdf79a"; // predictAsset(bytes32) —— 仅作发射前链上双重核验
+  const CLONE_PRE = "602c3d8160093d39f33d3d3d3d363d3d37363d73";
+  const CLONE_SUF = "5af43d3d93803e602a57fd5bf3";
+  const TICK_MIN = -299999, TICK_KNEE = -51296, TICK_STEP = 8;
+
+  // ───────────────────────── keccak-256(自含实现,零依赖;正确性由发射前链上 predictAsset 双重核验兜底)
+  const KECCAK_SRC = `
+  const RC_HI = [0,0,0x80000000,0x80000000,0,0,0x80000000,0x80000000,0,0,0,0,0,0x80000000,0x80000000,0x80000000,0x80000000,0x80000000,0,0x80000000,0x80000000,0x80000000,0,0x80000000];
+  const RC_LO = [1,0x8082,0x808a,0x80008000,0x808b,0x80000001,0x80008081,0x8009,0x8a,0x88,0x80008009,0x8000000a,0x8000808b,0x8b,0x8089,0x8003,0x8002,0x80,0x800a,0x8000000a,0x80008081,0x8080,0x80000001,0x80008008];
+  const RHO = [0,1,62,28,27,36,44,6,55,20,3,10,43,25,39,41,45,15,21,8,18,2,61,56,14]; // 按 x+5y 索引
+  function keccakF(lo, hi) {
+    const clo = new Int32Array(5), chi = new Int32Array(5);
+    const blo = new Int32Array(25), bhi = new Int32Array(25);
+    for (let r = 0; r < 24; r++) {
+      for (let x = 0; x < 5; x++) {
+        clo[x] = lo[x] ^ lo[x+5] ^ lo[x+10] ^ lo[x+15] ^ lo[x+20];
+        chi[x] = hi[x] ^ hi[x+5] ^ hi[x+10] ^ hi[x+15] ^ hi[x+20];
+      }
+      for (let x = 0; x < 5; x++) {
+        const dlo = clo[(x+4)%5] ^ ((clo[(x+1)%5] << 1) | (chi[(x+1)%5] >>> 31));
+        const dhi = chi[(x+4)%5] ^ ((chi[(x+1)%5] << 1) | (clo[(x+1)%5] >>> 31));
+        for (let y = 0; y < 25; y += 5) { lo[x+y] ^= dlo; hi[x+y] ^= dhi; }
+      }
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) {
+        const i = x + 5*y, n = RHO[i], j = y + 5*((2*x + 3*y) % 5);
+        let l = lo[i], h = hi[i], rl, rh;
+        if (n === 0) { rl = l; rh = h; }
+        else if (n < 32) { rl = (l << n) | (h >>> (32-n)); rh = (h << n) | (l >>> (32-n)); }
+        else if (n === 32) { rl = h; rh = l; }
+        else { const m = n - 32; rl = (h << m) | (l >>> (32-m)); rh = (l << m) | (h >>> (32-m)); }
+        blo[j] = rl; bhi[j] = rh;
+      }
+      for (let y = 0; y < 25; y += 5) for (let x = 0; x < 5; x++) {
+        lo[x+y] = blo[x+y] ^ (~blo[(x+1)%5+y] & blo[(x+2)%5+y]);
+        hi[x+y] = bhi[x+y] ^ (~bhi[(x+1)%5+y] & bhi[(x+2)%5+y]);
+      }
+      lo[0] ^= RC_LO[r]; hi[0] ^= RC_HI[r];
+    }
+  }
+  // msg 为 Uint8Array(长度 < 136,即单块;本页所有用途都满足),返回 32 字节 Uint8Array
+  function keccak256(msg) {
+    const blk = new Uint8Array(136);
+    blk.set(msg); blk[msg.length] ^= 0x01; blk[135] ^= 0x80;
+    const lo = new Int32Array(25), hi = new Int32Array(25);
+    const dv = new DataView(blk.buffer);
+    for (let i = 0; i < 17; i++) { lo[i] = dv.getUint32(i*8, true); hi[i] = dv.getUint32(i*8+4, true); }
+    keccakF(lo, hi);
+    const out = new Uint8Array(32), ov = new DataView(out.buffer);
+    for (let i = 0; i < 4; i++) { ov.setUint32(i*8, lo[i] >>> 0, true); ov.setUint32(i*8+4, hi[i] >>> 0, true); }
+    return out;
+  }`;
+  const keccak256 = new Function(KECCAK_SRC + "\nreturn keccak256;")(); // 主线程与 Worker 共用同一份源码
+
+  // ───────────────────────── 小工具
+  const $ = i => document.getElementById(i);
+  const msg = t => $("msg").innerHTML = t;
+  const hex = b => Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+  const unhex = s => { s = s.replace(/^0x/, ""); const b = new Uint8Array(s.length/2); for (let i = 0; i < b.length; i++) b[i] = parseInt(s.substr(i*2, 2), 16); return b; };
+  const padN = n => n.toString(16).padStart(64, "0");
+  const pad = a => a.replace(/^0x/, "").toLowerCase().padStart(64, "0");
+  const padI = n => ((1n << 256n) + BigInt(n)).toString(16).slice(-64);
+  const isAddr = s => /^0x[0-9a-fA-F]{40}$/.test(s.trim());
+  let id = 0;
+  const rpc = async (m, p) => {
+    const r = await fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: ++id, method: m, params: p }) });
+    const j = await r.json(); if (j.error) throw new Error(j.error.message); return j.result;
+  };
+
+  // ───────────────────────── CREATE2 预测(与发射器 predictAsset 同构)
+  let initHash = null; // 32 字节;impl 链上读回后算一次
+  function predict(saltBytes) {
+    const buf = new Uint8Array(85);
+    buf[0] = 0xff; buf.set(unhex(TOKEN_FACTORY), 1); buf.set(saltBytes, 21); buf.set(initHash, 53);
+    return "0x" + hex(keccak256(buf).slice(12));
+  }
+
+  // ───────────────────────── 靓号后台挖矿(多 Worker,dbdbdb;先到先得,dbdb 兜底)
+  const state = { salt: null, addr: null, best: 0, tries: 0, mining: false, workers: [], custom: false };
+  function stopMine() { state.workers.forEach(w => w.terminate()); state.workers = []; state.mining = false; }
+  function startMine() {
+    stopMine();
+    if (!initHash) return;
+    state.salt = null; state.addr = null; state.best = 0; state.tries = 0; state.mining = true;
+    const src = KECCAK_SRC + `
+      onmessage = e => {
+        const { factory, initHash, seed } = e.data;
+        const buf = new Uint8Array(85);
+        buf[0] = 0xff;
+        const fb = new Uint8Array(20); for (let i = 0; i < 20; i++) fb[i] = parseInt(factory.substr(2+i*2, 2), 16);
+        buf.set(fb, 1);
+        const ih = new Uint8Array(32); for (let i = 0; i < 32; i++) ih[i] = parseInt(initHash.substr(i*2, 2), 16);
+        buf.set(ih, 53);
+        const salt = new Uint8Array(32);
+        crypto.getRandomValues(salt); salt[0] = seed;
+        let tries = 0, best = 0;
+        const hx = b => Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
+        for (;;) {
+          // 盐自增(小端),比每次重新随机快
+          for (let i = 31; i >= 0; i--) { if (++salt[i] < 256) break; salt[i] = 0; }
+          buf.set(salt, 21);
+          const h = keccak256(buf);
+          tries++;
+          // 后缀:…db db db → 字节 29,30,31 = 0xdb
+          if (h[31] === 0xdb && h[30] === 0xdb) {
+            const lvl = h[29] === 0xdb ? 6 : 4;
+            if (lvl > best) {
+              best = lvl;
+              postMessage({ type: "hit", lvl, salt: "0x" + hx(salt), addr: "0x" + hx(h.slice(12)), tries });
+              tries = 0;
+              if (lvl >= 6) return;
+              crypto.getRandomValues(salt); salt[0] = seed; // 换个起点继续挖 6 位
+            }
+          }
+          if (tries % 131072 === 0) { postMessage({ type: "tick", tries }); tries = 0; }
+        }
+      };`;
+    const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+    const n = Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 1));
+    for (let i = 0; i < n; i++) {
+      const w = new Worker(url);
+      w.onmessage = e => {
+        const m = e.data;
+        state.tries += m.tries || 0;
+        if (m.type === "hit" && m.lvl > state.best) {
+          // 主线程独立重算一遍,两边一致才认
+          const check = predict(unhex(m.salt));
+          if (check.toLowerCase() !== m.addr.toLowerCase()) return;
+          state.best = m.lvl; state.salt = m.salt; state.addr = check;
+          if (m.lvl >= 6) stopMine();
+        }
+        renderMine(); gate();
+      };
+      w.postMessage({ factory: TOKEN_FACTORY, initHash: hex(initHash), seed: i + 1 });
+      state.workers.push(w);
+    }
+    renderMine();
+  }
+  function renderMine() {
+    if (state.custom) {
+      const v = $("customSalt").value.trim();
+      if (/^0x[0-9a-fA-F]{64}$/.test(v) && initHash) {
+        state.salt = v; state.addr = predict(unhex(v));
+        $("mineInfo").innerHTML = '<span class="warn">使用自备盐</span>';
+        $("predAddr").textContent = state.addr;
+      } else {
+        state.salt = null; state.addr = null;
+        $("mineInfo").innerHTML = '<span class="bad">自备盐格式不对(需 0x + 64 位十六进制)</span>';
+        $("predAddr").textContent = "—";
+      }
+      return;
+    }
+    const t = (state.tries / 1e6).toFixed(1);
+    $("mineInfo").innerHTML = state.best >= 6
+      ? `<span class="ok">已挖到 6 位尾号 …dbdbdb</span>(${t}M 次尝试)`
+      : state.best >= 4
+        ? `<span class="ok">已有 4 位尾号 …dbdb</span>,后台继续挖 6 位…(${t}M 次尝试)`
+        : `正在你的浏览器里挖靓号盐…(${t}M 次尝试)`;
+    $("predAddr").textContent = state.addr || "—";
+  }
+
+  // ───────────────────────── 表单状态
+  let acct = null, logoDataUri = null, numeraireOk = true, launched = false;
+
+  function tickVal() {
+    const t = parseInt($("tick").value.trim(), 10);
+    if (!Number.isInteger(t)) return null;
+    if (t % TICK_STEP !== 0 || t <= -300000 || t >= TICK_KNEE) return null;
+    return t;
+  }
+  function renderTick() {
+    const t = tickVal();
+    $("tick").classList.toggle("bad", $("tick").value.trim() !== "" && t === null);
+    if (t === null) { $("tickInfo").textContent = "对应开盘 FDV:—(tick 需为 8 的倍数,且在 -299999 ~ -51304 内)"; return; }
+    const fdv = 1e9 * Math.pow(1.0001, t);
+    const px = parseFloat($("px").value);
+    let s = `对应开盘 FDV ≈ ${fdv.toPrecision(4)} 计价币`;
+    if (px > 0) s += ` ≈ $${(fdv * px).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    $("tickInfo").textContent = s;
+  }
+  $("fdvIn").addEventListener("input", () => {
+    const f = parseFloat($("fdvIn").value);
+    if (!(f > 0)) return;
+    let t = Math.round(Math.log(f / 1e9) / Math.log(1.0001) / TICK_STEP) * TICK_STEP;
+    t = Math.max(TICK_MIN + 7, Math.min(TICK_KNEE - TICK_STEP, t));
+    $("tick").value = t; renderTick(); gate();
+  });
+  ["tick", "px"].forEach(i => $(i).addEventListener("input", () => { renderTick(); gate(); }));
+
+  async function checkNumeraire() {
+    const v = $("numeraire").value.trim();
+    if (!isAddr(v)) { numeraireOk = false; $("numInfo").innerHTML = '<span class="bad">地址格式不对</span>'; gate(); return; }
+    try {
+      const code = await rpc("eth_getCode", [v, "latest"]);
+      numeraireOk = code && code !== "0x";
+      $("numInfo").innerHTML = numeraireOk
+        ? (v.toLowerCase() === NVDA.toLowerCase() ? '<span class="ok">NVDA ✓</span>' : '<span class="ok">合约存在 ✓</span>(非默认 NVDA,确认你知道自己在配什么)')
+        : '<span class="bad">该地址在 RH 链上没有代码 —— 不是代币合约</span>';
+    } catch { numeraireOk = false; $("numInfo").innerHTML = '<span class="warn">RPC 暂时不可达,稍后重试</span>'; }
+    gate();
+  }
+  $("numeraire").addEventListener("change", checkNumeraire);
+
+  $("sameAddr").addEventListener("change", () => {
+    $("oper").disabled = $("sameAddr").checked;
+    if ($("sameAddr").checked) $("oper").value = $("benef").value;
+    gate();
+  });
+  $("oper").disabled = true;
+  $("benef").addEventListener("input", () => { if ($("sameAddr").checked) $("oper").value = $("benef").value; gate(); });
+  $("oper").addEventListener("input", gate);
+  ["name", "symbol", "maxSync"].forEach(i => $(i).addEventListener("input", gate));
+
+  $("customSaltChk").addEventListener("change", () => {
+    state.custom = $("customSaltChk").checked;
+    $("customSalt").style.display = state.custom ? "block" : "none";
+    if (state.custom) stopMine(); else startMine();
+    renderMine(); gate();
+  });
+  $("customSalt").addEventListener("input", () => { renderMine(); gate(); });
+
+  // Logo:与主站同规格(128px 方图 jpeg,≤8KB base64,预算内逐级降质)
+  $("drop").onclick = () => $("file").click();
+  $("drop").addEventListener("dragover", e => e.preventDefault());
+  $("drop").addEventListener("drop", e => { e.preventDefault(); if (e.dataTransfer.files[0]) loadLogo(e.dataTransfer.files[0]); });
+  $("file").onchange = () => { if ($("file").files[0]) loadLogo($("file").files[0]); };
+  function loadLogo(f) {
+    const img = new Image();
+    img.onload = () => {
+      logoDataUri = null;
+      for (const [size, q] of [[128, .8], [128, .6], [96, .6], [96, .4]]) {
+        const c = document.createElement("canvas");
+        c.width = size; c.height = size;
+        const s = Math.min(img.width, img.height);
+        c.getContext("2d").drawImage(img, (img.width - s)/2, (img.height - s)/2, s, s, 0, 0, size, size);
+        const uri = c.toDataURL("image/jpeg", q);
+        if (uri.length <= 8000) { logoDataUri = uri; break; }
+      }
+      if (logoDataUri) {
+        $("logoPrev").src = logoDataUri; $("logoPrev").style.display = "block";
+        $("logoInfo").textContent = `已压缩 ${(logoDataUri.length/1024).toFixed(1)}KB,上链即为正式元数据用图`;
+      } else $("logoInfo").textContent = "压缩失败,请换一张图";
+      gate();
+    };
+    img.src = URL.createObjectURL(f);
+  }
+
+  function maxSyncWad() {
+    const v = $("maxSync").value.trim();
+    if (!/^\d+(\.\d{1,18})?$/.test(v)) return null;
+    const [w, f = ""] = v.split(".");
+    return BigInt(w) * 10n**18n + BigInt((f + "0".repeat(18)).slice(0, 18));
+  }
+
+  function formOk() {
+    return $("name").value.trim() && $("symbol").value.trim() && logoDataUri
+      && numeraireOk && isAddr($("numeraire").value) && tickVal() !== null
+      && isAddr($("benef").value) && isAddr($("oper").value)
+      && maxSyncWad() !== null && state.salt && state.addr;
+  }
+  function gate() { $("launch").disabled = !(acct && formOk()) || launched; }
+
+  // ───────────────────────── 编码 launch((string,string,string,address,int24,address,address,uint256,bytes32))
+  const encStr = s => {
+    const b = new TextEncoder().encode(s);
+    let h = ""; b.forEach(x => h += x.toString(16).padStart(2, "0"));
+    const padded = h.padEnd(Math.ceil(b.length/32)*64 || 64, "0");
+    return { len: padN(BigInt(b.length)), data: padded, slots: 1 + padded.length/64 };
+  };
+  function encodeLaunch(p) {
+    const sN = encStr(p.name), sS = encStr(p.symbol), sU = encStr(p.uri);
+    const HEAD = 9 * 32;
+    const off1 = HEAD, off2 = off1 + sN.slots*32, off3 = off2 + sS.slots*32;
+    const tuple =
+      padN(BigInt(off1)) + padN(BigInt(off2)) + padN(BigInt(off3)) +
+      pad(p.numeraire) + padI(p.tick) + pad(p.benef) + pad(p.oper) +
+      padN(p.maxSync) + p.salt.replace("0x", "") +
+      sN.len + sN.data + sS.len + sS.data + sU.len + sU.data;
+    return LAUNCH_SEL + padN(32n) + tuple;
+  }
+
+  // ───────────────────────── 钱包与发射
+  $("connect").onclick = async () => {
+    if (!window.ethereum) return msg('<span class="bad">未检测到钱包 —— 请在钱包内置浏览器打开</span>');
+    try { await ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_HEX }] }); }
+    catch (e) { if (e.code === 4902) await ethereum.request({ method: "wallet_addEthereumChain", params: [{
+      chainId: CHAIN_HEX, chainName: "Robinhood Chain", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+      rpcUrls: [RPC], blockExplorerUrls: [EXPLORER] }] }); }
+    [acct] = await ethereum.request({ method: "eth_requestAccounts" });
+    $("connect").textContent = acct.slice(0, 8) + "… 已连接";
+    gate();
+  };
+
+  $("launch").onclick = async () => {
+    if (!formOk()) return;
+    launched = true; gate();
+    try {
+      // 发射前链上双重核验:发射器本尊算的地址必须与本地一致,且该地址还没被占
+      msg("核验盐与预测地址…");
+      const onchain = await rpc("eth_call", [{ to: LAUNCHER, data: SEL_PREDICT + state.salt.replace("0x", "") }, "latest"]);
+      const onAddr = "0x" + onchain.slice(-40);
+      if (onAddr.toLowerCase() !== state.addr.toLowerCase())
+        throw new Error("本地预测与发射器 predictAsset 不一致 —— 中止(请刷新页面重试)");
+      const codeAt = await rpc("eth_getCode", [state.addr, "latest"]);
+      if (codeAt !== "0x") throw new Error("预测地址已被占用 —— 换一个盐再发(点「再发一枚」)");
+
+      const meta = { name: $("name").value.trim(), symbol: $("symbol").value.trim() };
+      const d = $("desc").value.trim(); if (d) meta.description = d;
+      meta.image = logoDataUri;
+      const uri = "data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(meta))));
+
+      const data = encodeLaunch({
+        name: meta.name, symbol: meta.symbol, uri,
+        numeraire: $("numeraire").value.trim(), tick: tickVal(),
+        benef: $("benef").value.trim(), oper: $("oper").value.trim(),
+        maxSync: maxSyncWad(), salt: state.salt,
+      });
+      msg("发送中…(钱包里确认)");
+      const h = await ethereum.request({ method: "eth_sendTransaction", params: [{ from: acct, to: LAUNCHER, data }] });
+      msg("tx " + h + " — 等待确认…");
+      let rec = null;
+      for (let i = 0; i < 90 && !rec; i++) { await new Promise(r => setTimeout(r, 2000)); rec = await rpc("eth_getTransactionReceipt", [h]); }
+      if (!rec) return msg('<span class="warn">等待超时,自行到浏览器查:</span> ' + h);
+      if (rec.status !== "0x1") { launched = false; gate(); return msg('<span class="bad">✗ 交易回滚(发射后自检不过会整笔回滚 —— 参数或轨道状态有问题)</span>\n' + h); }
+      const ev = (rec.logs || []).find(l => l.topics && l.topics[0] === LAUNCH_TOPIC);
+      let out = '<span class="ok">✓ 发射成功,结构与 WINK 逐字节同构</span>\n';
+      const link = a => `<a href="${EXPLORER}/address/${a}" target="_blank">${a}</a>`;
+      if (ev) {
+        const asset = "0x" + ev.topics[1].slice(-40);
+        const w = ev.data.replace(/^0x/, "");
+        const [vault, conv, escrow] = [0, 1, 2].map(i => "0x" + w.slice(i*64+24, i*64+64));
+        out += `代币  ${link(asset)}\n托底金库 ${link(vault)}\n税转换器 ${link(conv)}\n只烧托管 ${link(escrow)}\n`;
+        out += `<a href="/wink/?token=${asset}&vault=${vault}&escrow=${escrow}" target="_blank">→ 打开这枚币的机制面板</a>\n`;
+      }
+      out += "tx " + h;
+      msg(out);
+      $("again").style.display = "inline-block";
+    } catch (e) {
+      launched = false; gate();
+      msg('<span class="bad">已取消或失败:' + (e.message || e) + "</span>");
+    }
+  };
+
+  $("again").onclick = () => {
+    launched = false; $("again").style.display = "none"; msg("");
+    if (!state.custom) startMine(); else { $("customSalt").value = ""; renderMine(); }
+    gate();
+  };
+
+  // ───────────────────────── 启动:读 impl → 算 initHash → 开挖
+  (async () => {
+    try {
+      const impl = await rpc("eth_call", [{ to: TOKEN_FACTORY, data: SEL_IMPL }, "latest"]);
+      initHash = keccak256(unhex(CLONE_PRE + impl.slice(-40) + CLONE_SUF));
+      startMine();
+      checkNumeraire();
+    } catch (e) {
+      $("mineInfo").innerHTML = '<span class="bad">读取轨道参数失败:' + (e.message || e) + "(刷新重试)</span>";
+    }
+  })();
+})();
+</script>
