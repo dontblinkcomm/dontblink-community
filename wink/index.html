@@ -227,9 +227,9 @@ every WINK/NVDA trade
   document.getElementById("escClaim").onclick = async () => { await send(ESCROW, S.escClaim); refresh(); };
 
   // ==== wink mode 发射(结构焊死在发射器字节码里,这里只收身份参数) ====
-  const LAUNCHER = "0xE75303E87B1620BdFe3D50a05a6B36f294993092"; // v2:0.3% 层全归平台
+  const LAUNCHER = "0xEd37ED0e988DA716C3F2Bb499E64E0b83F4863b8"; // v3:开盘 tick 可配(测试通道固定 -161728)
   const NVDA = "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC";
-  const LAUNCH_SEL = "0x89d79829"; // launch((string,string,string,address,address,address,uint256,bytes32))
+  const LAUNCH_SEL = "0xd14414c2"; // launch((string,string,string,address,int24,address,address,uint256,bytes32))
   const LAUNCH_TOPIC = "0x23bb79ba8d70069c7ce173aefc71b8653ddd7335a04c12ee74532e41d9f8e457";
   const lMsg = t => document.getElementById("lMsg").textContent = t;
   const encStr = s => {
@@ -238,13 +238,14 @@ every WINK/NVDA trade
     const padded = hex.padEnd(Math.ceil(b.length/32)*64 || 64, "0");
     return { len: padN(BigInt(b.length)), data: padded, slots: 1 + (padded.length/64) };
   };
+  const padI = n => ((1n << 256n) + BigInt(n)).toString(16).slice(-64); // int24 负数补码
   function encodeLaunch(name, symbol, uri, treas, op, salt) {
     const sN = encStr(name), sS = encStr(symbol), sU = encStr(uri);
-    const HEAD = 8 * 32;
+    const HEAD = 9 * 32;
     const off1 = HEAD, off2 = off1 + sN.slots*32, off3 = off2 + sS.slots*32;
     const tuple =
       padN(BigInt(off1)) + padN(BigInt(off2)) + padN(BigInt(off3)) +
-      pad(NVDA) + pad(treas) + pad(op) +
+      pad(NVDA) + padI(-161728) + pad(treas) + pad(op) +
       padN(0n) + salt.replace("0x","") +
       sN.len + sN.data + sS.len + sS.data + sU.len + sU.data;
     return LAUNCH_SEL + padN(32n) + tuple;
