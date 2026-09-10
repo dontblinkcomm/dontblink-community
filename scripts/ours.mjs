@@ -298,6 +298,23 @@ try {
   console.log('v2 scan failed:', String(e).slice(0, 120))
 }
 
+// ---- 携带行治愈:carryPrev 原样带过来的行永远不会被重算 ----
+// mode=sale 映射修上(a49136c)之前发现的固定价公募币,被记成了 instant + 无池,
+// 而游标早已越过它们的发射块 —— 常规增量扫描永远到不了那里,坏行就被无限期携带
+// (APPA 2026-09-10 就是这么在 Explore 上消失的,链上明明有 $75K/天的量)。
+// 治法:对「无池子」的携带行每轮补问一次 saleResult,有结算池的就是被记坏的
+// sale 行,当场改正。当前这样的行只有个位数,每行一个 eth_call,幂等,失败即跳过。
+for (const t of tokens.values()) {
+  if (!t.pool && t.mode !== 'v1') {
+    const p = await salePool(t.token)
+    if (p) {
+      console.log(`治愈携带坏行: ${t.symbol} ${t.token} ${t.mode}→sale pool=${p}`)
+      t.mode = 'sale'
+      t.pool = p
+    }
+  }
+}
+
 // ---- 行情：GT pools/multi，30 个一批 ----
 // **v2 的币排在最前面，然后才按区块从新到旧。**
 //
