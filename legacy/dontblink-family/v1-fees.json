@@ -1,18 +1,18 @@
 {
- "capturedAt": 1788756009,
- "block": 56555628,
+ "capturedAt": 1789025032,
+ "block": 59222099,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
-  "claimable": 692,
-  "nothing": 305,
+  "claimable": 689,
+  "nothing": 308,
   "capped": 2,
   "windowOpen": 0,
   "other": 0
  },
- "wethOutstanding": "1644458655226973385",
- "wethClaimable": "1490320053980469691",
+ "wethOutstanding": "3534005156101305092",
+ "wethClaimable": "3379866554854801398",
  "wethBricked": "154138601246503694",
- "devsWithClaimable": 282,
+ "devsWithClaimable": 281,
  "bricked": [
   {
    "token": "0x733f5b0567f151f86541bbea52d071c0e48145e7",
@@ -20,7 +20,7 @@
    "name": "Thesis",
    "deployer": "0x7e5564abf6452754a68f517a66745a11520ee0e0",
    "weth": "105661087578165490",
-   "tokens": "13698051672155155284786848"
+   "tokens": "14294812959123913141300224"
   },
   {
    "token": "0xf40a0dd283e2edf74e20df2eeb66c5c99124bcfa",
@@ -28,7 +28,7 @@
    "name": "fomocat",
    "deployer": "0x4cf05ae79736e2ecb461583873385943b36b0012",
    "weth": "48477513668338204",
-   "tokens": "12047025778792611772315606"
+   "tokens": "12685851375991962143997022"
   }
  ]
 }
