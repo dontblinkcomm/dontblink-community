@@ -93,12 +93,14 @@
   </div>
 
   <div class="card">
-    <h2>③ 你的收款与托管地址</h2>
-    <label class="f"><b>托管受益地址</b>(托管兑换产出的唯一去向 —— 写错永远改不了,务必自控钱包)</label>
+    <h2>③ 你们的收款钱包</h2>
+    <label class="f"><b>收款地址</b> —— 项目方分红换出来的钱,最终全部打进这个钱包</label>
     <input type="text" id="benef" placeholder="0x…">
-    <label class="f"><b>托管触发地址</b>(谁有权触发兑换销毁)</label>
+    <div class="note">⚠️ 发射后<b>永远改不了</b>。必须填你们自己拿着私钥的钱包(OKX/MetaMask 里自建的都行),<b>别填交易所充值地址</b>。</div>
+    <label class="f"><b>操作地址</b> —— 谁有权点"兑换分红"这个按钮</label>
     <input type="text" id="oper" placeholder="0x…">
-    <label class="chk"><input type="checkbox" id="sameAddr" checked> 触发地址同受益地址</label>
+    <div class="note">它只负责按按钮,不经手钱 —— 钱永远只会进上面的收款地址。不知道填什么就保持下面的勾选。</div>
+    <label class="chk"><input type="checkbox" id="sameAddr" checked> 操作地址用同一个钱包(推荐)</label>
   </div>
 
   <div class="card">
@@ -298,24 +300,41 @@
   // ───────────────────────── 表单状态
   let acct = null, logoDataUri = null, numeraireOk = true, launched = false;
 
+  // 手机/中文输入法常打出全角数字、全角负号"-"、数学减号"−"或各种横线 —— 全部归一成 ASCII
+  const normNum = s => s
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[−‒–—―－]/g, "-")
+    .replace(/[．。]/g, ".")
+    .replace(/\s+/g, "");
   function tickVal() {
-    const t = parseInt($("tick").value.trim(), 10);
+    const t = parseInt(normNum($("tick").value), 10);
     if (!Number.isInteger(t)) return null;
     if (t % TICK_STEP !== 0 || t <= -300000 || t >= TICK_KNEE) return null;
     return t;
   }
   function renderTick() {
+    const raw = $("tick").value.trim();
     const t = tickVal();
-    $("tick").classList.toggle("bad", $("tick").value.trim() !== "" && t === null);
-    if (t === null) { $("tickInfo").textContent = "对应开盘 FDV:—(tick 需为 8 的倍数,且在 -299999 ~ -51304 内)"; return; }
+    $("tick").classList.toggle("bad", raw !== "" && t === null);
+    if (t === null) {
+      let why = "填一个 8 的倍数,区间 -299992 ~ -51304";
+      if (raw !== "") {
+        const n = parseInt(normNum(raw), 10);
+        if (!Number.isInteger(n)) why = "没识别出数字 —— 负号要用半角 \"-\"";
+        else if (n <= -300000 || n >= TICK_KNEE) why = `${n} 超出发射器允许区间 -299992 ~ -51304(链上写死,超界会回滚)`;
+        else why = `需为 8 的倍数 —— 就近可用 ${Math.round(n / TICK_STEP) * TICK_STEP}`;
+      }
+      $("tickInfo").textContent = "对应开盘 FDV:—(" + why + ")";
+      return;
+    }
     const fdv = 1e9 * Math.pow(1.0001, t);
-    const px = parseFloat($("px").value);
+    const px = parseFloat(normNum($("px").value));
     let s = `对应开盘 FDV ≈ ${fdv.toPrecision(4)} 计价币`;
     if (px > 0) s += ` ≈ $${(fdv * px).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
     $("tickInfo").textContent = s;
   }
   $("fdvIn").addEventListener("input", () => {
-    const f = parseFloat($("fdvIn").value);
+    const f = parseFloat(normNum($("fdvIn").value));
     if (!(f > 0)) return;
     let t = Math.round(Math.log(f / 1e9) / Math.log(1.0001) / TICK_STEP) * TICK_STEP;
     t = Math.max(TICK_MIN + 7, Math.min(TICK_KNEE - TICK_STEP, t));
@@ -382,7 +401,7 @@
   }
 
   function maxSyncWad() {
-    const v = $("maxSync").value.trim();
+    const v = normNum($("maxSync").value);
     if (!/^\d+(\.\d{1,18})?$/.test(v)) return null;
     const [w, f = ""] = v.split(".");
     return BigInt(w) * 10n**18n + BigInt((f + "0".repeat(18)).slice(0, 18));
