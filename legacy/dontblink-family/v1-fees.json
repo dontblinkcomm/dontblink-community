@@ -1,6 +1,6 @@
 {
- "capturedAt": 1789204970,
- "block": 60996226,
+ "capturedAt": 1789210096,
+ "block": 61046886,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
   "claimable": 690,
@@ -9,8 +9,8 @@
   "windowOpen": 0,
   "other": 0
  },
- "wethOutstanding": "4037669218413021089",
- "wethClaimable": "3882826745194000724",
+ "wethOutstanding": "4039166158879160479",
+ "wethClaimable": "3884323685660140114",
  "wethBricked": "154842473219020365",
  "devsWithClaimable": 282,
  "bricked": [
@@ -20,7 +20,7 @@
    "name": "Thesis",
    "deployer": "0x7e5564abf6452754a68f517a66745a11520ee0e0",
    "weth": "106364959550682161",
-   "tokens": "14298902935457042838846138"
+   "tokens": "14309094222279829355914835"
   },
   {
    "token": "0xf40a0dd283e2edf74e20df2eeb66c5c99124bcfa",
