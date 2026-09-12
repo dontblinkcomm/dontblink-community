@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-12T14:15:39.982Z",
+ "timestamp": "2026-09-12T14:30:38.212Z",
  "version": {
   "major": 1,
-  "minor": 18,
+  "minor": 19,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,14 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0xFbAA0D6bB85f20B6a7AD7E5b3463Ad4f24A561c5",
+   "name": "Fomo Hedgehog",
+   "symbol": "HEDGEHOG",
+   "decimals": 18,
+   "logoURI": "https://dontblink.family/api/token-images/eba2ed1dd9fdacacd7c7517957a243ec04b8e3e9dbedec8aa0bdf44ddceec1d3"
+  },
   {
    "chainId": 4663,
    "address": "0x6a1B52F42922dCFAb55657E3fA52940159b1Dbdb",
