@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-13T18:32:48.206Z",
+ "timestamp": "2026-09-13T18:49:25.465Z",
  "version": {
   "major": 1,
-  "minor": 21,
+  "minor": 22,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,14 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0xd22171a3194fC33A14eb9175766C1AC1159E80d4",
+   "name": "T0913 Blink Test",
+   "symbol": "T0913B",
+   "decimals": 18,
+   "logoURI": "https://dontblink.community/logos/0xd22171a3194fc33a14eb9175766c1ac1159e80d4.jpg"
+  },
   {
    "chainId": 4663,
    "address": "0x731f682773Db47D029be904F9813700576466595",
