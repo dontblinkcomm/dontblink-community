@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-13T16:30:48.478Z",
+ "timestamp": "2026-09-13T16:57:26.076Z",
  "version": {
   "major": 1,
-  "minor": 20,
+  "minor": 21,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,14 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0x731f682773Db47D029be904F9813700576466595",
+   "name": "Pisco",
+   "symbol": "PISCO",
+   "decimals": 18,
+   "logoURI": "https://files.catbox.moe/63clx6.jpg"
+  },
   {
    "chainId": 4663,
    "address": "0x055dBCdE6725aAF476c2f28ce5EcD6123e09D011",
