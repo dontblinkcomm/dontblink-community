@@ -62,6 +62,7 @@
       <div><label class="f"><b>名称</b></label><input type="text" id="name" placeholder="Wink"></div>
       <div><label class="f"><b>符号</b></label><input type="text" id="symbol" placeholder="WINK"></div>
     </div>
+    <div class="note" id="symInfo"></div>
     <label class="f"><b>简介</b>(可选,写进链上元数据)</label>
     <textarea id="desc" rows="2" placeholder=""></textarea>
     <label class="f"><b>Logo</b>(压缩后直接上链,永久)</label>
@@ -137,6 +138,10 @@
   const LAUNCH_TOPIC = "0x23bb79ba8d70069c7ce173aefc71b8653ddd7335a04c12ee74532e41d9f8e457";
   const SEL_IMPL = "0x3a4741bd";    // IMPLEMENTATION()
   const SEL_PREDICT = "0x61fdf79a"; // predictAsset(bytes32) —— 仅作发射前链上双重核验
+  // 符号唯一性注册表(TickerRegistry)。留空 = 预检关闭(接线 Safe 批次执行后填入激活)。
+  // 48h 新盘保护 + 正式盘永久锁;链上是硬拦截,这里只做提前的友好提示。
+  const REGISTRY = "";
+  const SEL_STATUS = "0xf963b393"; // statusOf(string)
   const CLONE_PRE = "602c3d8160093d39f33d3d3d3d363d3d37363d73";
   const CLONE_SUF = "5af43d3d93803e602a57fd5bf3";
   const TICK_MIN = -299999, TICK_KNEE = -51296, TICK_STEP = 8;
@@ -365,6 +370,29 @@
   $("benef").addEventListener("input", () => { if ($("sameAddr").checked) $("oper").value = $("benef").value; gate(); });
   $("oper").addEventListener("input", gate);
   ["name", "symbol", "maxSync"].forEach(i => $(i).addEventListener("input", gate));
+
+  // ── 符号预检(仅提示,不拦截 —— 链上注册表才是硬闸;RPC 抖动不该挡人发币)
+  let symTimer = 0;
+  async function checkSymbol() {
+    if (!REGISTRY) return;
+    const s = $("symbol").value.trim();
+    if (!s) { $("symInfo").textContent = ""; return; }
+    try {
+      const enc = encStr(s);
+      const data = SEL_STATUS + padN(32n) + enc.len + enc.data;
+      const r = await rpc("eth_call", [{ to: REGISTRY, data }, "latest"]);
+      const w = r.replace(/^0x/, "");
+      const holder = "0x" + w.slice(24, 64);
+      const perm = parseInt(w.slice(128, 192), 16) === 1;
+      const active = parseInt(w.slice(192, 256), 16) === 1;
+      const expiresAt = parseInt(w.slice(64, 128), 16);
+      if (!active) { $("symInfo").innerHTML = '<span class="ok">符号可用 ✓(发射后自动获得 48 小时独占保护)</span>'; return; }
+      $("symInfo").innerHTML = perm
+        ? `<span class="bad">符号已被永久锁定(持有者 ${holder.slice(0,10)}…)—— 换一个符号,链上会直接拒绝</span>`
+        : `<span class="warn">符号在 48 小时保护期内(至 ${new Date(expiresAt*1000).toLocaleString()})—— 现在发会被链上拒绝</span>`;
+    } catch { $("symInfo").textContent = ""; }
+  }
+  $("symbol").addEventListener("input", () => { clearTimeout(symTimer); symTimer = setTimeout(checkSymbol, 500); });
 
   $("customSaltChk").addEventListener("change", () => {
     state.custom = $("customSaltChk").checked;
