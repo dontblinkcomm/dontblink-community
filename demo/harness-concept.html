@@ -1,0 +1,193 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dontblink Stack</title>
+<style>
+:root { --bg:#05060b; --panel:#0c0e18; --panel2:#12142275; --line:#22243a; --text:#eceaff;
+  --muted:#7c8093; --accent:#7b6cf6; --accent-deep:#5b46d6; --good:#4ade80; }
+* { box-sizing:border-box; margin:0; }
+body { background:var(--bg); color:var(--text); font:15px/1.5 "Quicksand",-apple-system,sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+.note { background:#2a2208; color:#e8c95a; font:600 12px "JetBrains Mono",monospace; text-align:center; padding:8px; }
+header { border-bottom:1px solid var(--line); padding:14px 26px; display:flex; align-items:center; gap:14px; position:sticky; top:0; background:#05060bf5; z-index:9; }
+header b { font-size:19px; letter-spacing:-0.02em; }
+header .stk { font:600 10px "JetBrains Mono",monospace; color:var(--accent); border:1px solid #322a5e; border-radius:5px; padding:2px 8px; letter-spacing:.1em; }
+main { max-width:1440px; margin:0 auto; padding:38px 26px 60px; }
+h1 { font-size:32px; letter-spacing:-0.02em; }
+.sub { color:var(--muted); margin-top:8px; max-width:74ch; }
+h2 { font-size:21px; margin-top:46px; }
+h2 small { color:var(--muted); font-size:12px; font-weight:400; margin-left:10px; }
+.mono { font-family:"JetBrains Mono",monospace; }
+.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px; }
+.card { border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:20px 22px; }
+.inst-head { display:flex; gap:12px; align-items:center; }
+.inst-logo { width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-weight:700; font-size:15px; }
+.inst-head b { font-size:16px; }
+.badge { font:600 9.5px "JetBrains Mono",monospace; letter-spacing:.07em; border-radius:5px; padding:2px 7px; }
+.badge.flag { color:#b8a9ff; border:1px solid #322a5e; }
+.badge.live { color:var(--good); border:1px solid #1d3a29; }
+.badge.chain { color:#7fb3ff; border:1px solid #1d2a3a; }
+.rows { margin-top:14px; border-top:1px solid var(--line); }
+.row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--line); font-size:12.5px; }
+.row span { color:var(--muted); } .row b { font-weight:600; }
+.foot-note { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.6; }
+.wiz { display:grid; grid-template-columns:1fr 360px; gap:16px; margin-top:18px; align-items:start; }
+.step { border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:18px 22px; margin-bottom:14px; }
+.step h3 { font-size:14px; display:flex; gap:10px; align-items:center; }
+.step h3 i { font:600 11px "JetBrains Mono",monospace; color:var(--accent); font-style:normal; }
+.lbl { color:var(--muted); font-size:12px; margin:12px 0 6px; }
+.field { background:#0a0c14; border:1px solid var(--line); border-radius:10px; padding:11px 14px; font-size:14px; color:var(--text); display:flex; justify-content:space-between; }
+.field span { color:var(--muted); }
+.chips { display:flex; gap:8px; flex-wrap:wrap; }
+.chip { border:1px solid var(--line); border-radius:999px; padding:7px 15px; font-size:13px; color:var(--muted); }
+.chip.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+.play { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); font-size:13px; }
+.play:last-child { border:none; }
+.play small { display:block; color:var(--muted); font-size:11.5px; margin-top:2px; }
+.tick { width:19px; height:19px; border-radius:6px; border:1px solid var(--line); display:grid; place-items:center; font-size:11px; flex:none; }
+.tick.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.roy { font:600 10px "JetBrains Mono",monospace; color:var(--good); }
+.sumcard { border:1px solid var(--accent-deep); border-radius:16px; background:var(--panel); padding:22px; position:sticky; top:80px; }
+.sumcard h3 { font-size:15px; }
+.cta { background:var(--accent); color:#fff; border:none; border-radius:12px; padding:13px; font:600 14px "Quicksand",sans-serif; width:100%; margin-top:14px; cursor:pointer; }
+table { width:100%; border-collapse:collapse; margin-top:16px; font-size:13px; }
+th { text-align:left; color:var(--muted); font-weight:500; font-size:11.5px; padding:8px 10px; border-bottom:1px solid var(--line); font-family:"JetBrains Mono",monospace; letter-spacing:.05em; }
+td { padding:11px 10px; border-bottom:1px solid var(--line); }
+td:last-child, th:last-child { text-align:right; }
+.ck { font:600 10.5px "JetBrains Mono",monospace; }
+.ck.g { color:var(--good); } .ck.y { color:#ffd23f; }
+.kernel { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.kernel span { font:500 11px "JetBrains Mono",monospace; color:var(--muted); border:1px solid var(--line); border-radius:8px; padding:6px 12px; }
+.kernel b { color:var(--good); font-weight:600; }
+</style>
+
+<div class="note">CONCEPT DEMO · dontblink Stack — 数据为模拟,合约未部署</div>
+<header><b>dontblink</b><span class="stk">STACK</span>
+  <span style="margin-left:auto;color:var(--muted);font-size:13px">Launchpad = Chain + Harness</span></header>
+<main>
+
+<h1>Open your own launchpad</h1>
+<p class="sub">Every launchpad below runs on the same audited trust kernel — LP locked at birth, nothing ever minted,
+fees declared up front, deposits unseizable. The brand, the plays, the chain and the fee are yours. One transaction.</p>
+<div class="kernel">
+  <span>KERNEL <b>✓</b> LP locked at birth</span>
+  <span>KERNEL <b>✓</b> never mints</span>
+  <span>KERNEL <b>✓</b> fees declared up front</span>
+  <span>KERNEL <b>✓</b> deposits unseizable</span>
+  <span>KERNEL <b>✓</b> pause stops new launches only</span>
+</div>
+
+<h2>Launchpads on the Stack <small>· all paying the same protocol rent into BLINK buyback</small></h2>
+<div class="grid3">
+  <div class="card">
+    <div class="inst-head"><span class="inst-logo" style="background:#1b1440;color:#b8a9ff">db</span>
+      <div><b>dontblink</b> <span class="badge flag">FLAGSHIP</span><br><span class="badge chain">ROBINHOOD</span> <span class="badge live">LIVE</span></div></div>
+    <div class="rows">
+      <div class="row"><span>Tokens launched</span><b>1,143</b></div>
+      <div class="row"><span>24h volume</span><b>$2.41M</b></div>
+      <div class="row"><span>Plays enabled</span><b>7 of 9</b></div>
+      <div class="row"><span>→ protocol rent, lifetime</span><b class="mono" style="color:var(--good)">41.2 ETH</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="inst-head"><span class="inst-logo" style="background:#3a1d1d;color:#ff8a8a">GH</span>
+      <div><b>GMEHOUSE</b> <span class="badge flag">COMMUNITY</span><br><span class="badge chain">ROBINHOOD</span> <span class="badge live">LIVE</span></div></div>
+    <div class="rows">
+      <div class="row"><span>Niche</span><b>GME-quoted only</b></div>
+      <div class="row"><span>Tokens launched</span><b>86</b></div>
+      <div class="row"><span>Operator fee</span><b>0.4%</b></div>
+      <div class="row"><span>→ protocol rent, lifetime</span><b class="mono" style="color:var(--good)">2.9 ETH</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="inst-head"><span class="inst-logo" style="background:#122912;color:#7ddb8a">서</span>
+      <div><b>SEOULPAD</b> <span class="badge flag">COMMUNITY</span><br><span class="badge chain">BNB CHAIN</span> <span class="badge live">LIVE</span></div></div>
+    <div class="rows">
+      <div class="row"><span>Niche</span><b>KR community, z500 index rail</b></div>
+      <div class="row"><span>Tokens launched</span><b>203</b></div>
+      <div class="row"><span>Operator fee</span><b>0.25%</b></div>
+      <div class="row"><span>→ protocol rent, lifetime</span><b class="mono" style="color:var(--good)">5.1 ETH</b></div>
+    </div>
+  </div>
+</div>
+<p class="foot-note">A franchise directory, not a fork list — every instance shares the kernel, the alerts firehose and the meta pipeline. Forking strips the rent but loses the network.</p>
+
+<h2>Deploy wizard <small>· deployPortal(brand, plays[], quoteCatalog, fee) — one signature</small></h2>
+<div class="wiz">
+  <div>
+    <div class="step"><h3><i>01</i> Brand</h3>
+      <div class="lbl">Name &amp; accent</div>
+      <div class="field">MOONDESK <span>logo.png · #ffb648</span></div></div>
+    <div class="step"><h3><i>02</i> Chain rail</h3>
+      <div class="lbl">Where your pools live</div>
+      <div class="chips"><span class="chip on">Robinhood · Uniswap V3</span><span class="chip">BNB · Pancake V3</span><span class="chip">Solana · LaunchLab</span></div></div>
+    <div class="step"><h3><i>03</i> Plays — pick from the registry</h3>
+      <div class="play"><span class="tick on">✓</span><div style="flex:1"><b>Instant</b><small>by dontblink core · pool + lock in one tx</small></div><span class="roy">core</span></div>
+      <div class="play"><span class="tick on">✓</span><div style="flex:1"><b>Thesis</b><small>by dontblink core · 10% of fees to the author, forever</small></div><span class="roy">core</span></div>
+      <div class="play"><span class="tick on">✓</span><div style="flex:1"><b>Mirror Pair</b><small>by 0xC0a1…9f22 · long/short mirrored tokens, fees pay the winning side</small></div><span class="roy">0.05% → author</span></div>
+      <div class="play"><span class="tick">&nbsp;</span><div style="flex:1"><b>Tax Token</b><small>by dontblink core · asymmetric buy/sell tax, sunsets in 30 days</small></div><span class="roy">core</span></div>
+      <div class="play"><span class="tick">&nbsp;</span><div style="flex:1"><b>Quiet Hours</b><small>by 0x55E3…a253 · trading windows, off-hours fees burn</small></div><span class="roy">0.05% → author</span></div>
+      <div class="play" style="border-top:1px dashed var(--accent-deep);padding-top:12px"><span class="tick" style="border-color:var(--accent);color:var(--accent)">+</span><div style="flex:1"><b style="color:var(--accent)">Don&apos;t see your play? Describe it.</b><small>AI writes the contract, the checker judges it — see step 05 below</small></div></div></div>
+    <div class="step"><h3><i>04</i> Fees</h3>
+      <div class="lbl">Your cut, on top of pool fee</div>
+      <div class="field">0.40% <span>operator fee — yours</span></div>
+      <div class="lbl">Welded in the factory bytecode — not configurable</div>
+      <div class="field" style="border-color:#322a5e">0.10% <span>protocol rent → BLINK buyback</span></div></div>
+
+    <div class="step" style="border-color:var(--accent-deep)"><h3><i>05</i> Custom play — describe it, AI builds it</h3>
+      <div class="lbl">Say what you want, in plain words</div>
+      <div class="field" style="font-style:italic">&ldquo;2% fee on sells only — half buys GME straight into the LP, half drips to anyone holding longer than 30 days.&rdquo; <span style="font-style:normal">↵</span></div>
+
+      <div style="border:1px solid var(--line);border-radius:12px;background:#0a0c14;padding:14px 16px;margin-top:12px">
+        <div style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)">
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--good)"></span>
+          <b style="color:var(--text)">@Ada</b> drafted your play · 41s
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);margin-top:10px;line-height:2">
+          <span style="color:var(--text)">SellFeeDrip.sol</span> — ILaunchHandler, 148 lines<br>
+          <span style="color:var(--text)">SellFeeDrip.t.sol</span> — 11 fork tests against mainnet<br>
+          <span style="color:var(--text)">retirement.json</span> — fee sunsets to 0, handler freezes, LP untouched
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--line);border-radius:12px;background:#0a0c14;padding:14px 16px;margin-top:10px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px"><b style="color:var(--text)">Checker</b> · ran on a fork of the real chain, not on promises</div>
+        <div class="ck g" style="line-height:2.1">✓ never mints &nbsp; ✓ can&apos;t touch the LP lock &nbsp; ✓ fees fully declared (2% sell → 50/50)<br>✓ deposits unseizable &nbsp; ✓ retirement path declared &nbsp; ✓ 11/11 fork tests green</div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button class="cta" style="margin-top:0">Use it on MOONDESK now →</button>
+        <button class="cta" style="margin-top:0;background:none;border:1px solid var(--line);color:var(--text)">Publish to registry · earn 0.05% royalty</button>
+      </div>
+      <p class="foot-note">Private use is instant — checker green is the only gate, and the kernel means even your own play can&apos;t rug your own users. Publishing to the public registry needs 3 endorsement stakes on top. Change your mind later — retire it along the path it declared.</p>
+    </div>
+  </div>
+  <aside class="sumcard">
+    <h3>MOONDESK — ready to deploy</h3>
+    <div class="rows">
+      <div class="row"><span>Kernel</span><b>shared, audited, immutable</b></div>
+      <div class="row"><span>Chain</span><b>Robinhood · Uniswap V3</b></div>
+      <div class="row"><span>Plays</span><b>Instant · Thesis · Mirror Pair</b></div>
+      <div class="row"><span>Operator fee</span><b>0.40%</b></div>
+      <div class="row"><span>Protocol rent</span><b>0.10% — fixed</b></div>
+      <div class="row"><span>Play royalties</span><b>0.05% → Mirror Pair author</b></div>
+      <div class="row"><span>Deploy cost</span><b>~0.004 ETH</b></div>
+    </div>
+    <button class="cta">Deploy MOONDESK →</button>
+    <p class="foot-note">One signature. Your portal address is yours forever — we can't pause it, seize it, or change its fees. Neither can you, without the same 48h timelock everyone watches.</p>
+  </aside>
+</div>
+
+<h2>Play registry <small>· community plays live in community contracts — we only run the checker and the pay rail</small></h2>
+<table>
+  <tr><th>PLAY</th><th>AUTHOR</th><th>CHECKER</th><th>ENDORSED</th><th>USED BY</th><th>LAUNCHES</th><th>AUTHOR EARNED</th></tr>
+  <tr><td><b>Instant</b></td><td>dontblink core</td><td class="ck g">✓ 21/21 invariants</td><td class="ck g">core</td><td>3 pads</td><td>977</td><td class="mono">—</td></tr>
+  <tr><td><b>Thesis</b></td><td>dontblink core</td><td class="ck g">✓ 21/21 invariants</td><td class="ck g">core</td><td>2 pads</td><td>64</td><td class="mono">—</td></tr>
+  <tr><td><b>Mirror Pair</b></td><td class="mono">0xC0a1…9f22</td><td class="ck g">✓ 21/21 invariants</td><td class="ck g">4 stakes · 120K</td><td>2 pads</td><td>31</td><td class="mono" style="color:var(--good)">1.4 ETH</td></tr>
+  <tr><td><b>Quiet Hours</b></td><td class="mono">0x55E3…a253</td><td class="ck g">✓ 21/21 invariants</td><td class="ck g">3 stakes · 85K</td><td>1 pad</td><td>12</td><td class="mono" style="color:var(--good)">0.3 ETH</td></tr>
+  <tr><td><b>Rebase Basket</b></td><td class="mono">0x9f00…11ab</td><td class="ck y">2 invariants failing — retirement path undeclared</td><td class="ck y">in review</td><td>—</td><td>—</td><td class="mono">—</td></tr>
+</table>
+<p class="foot-note">We don't review intentions — we review invariants. A play that can't state how it retires never registers.
+Endorsers stake to vouch; a blow-up inside 90 days burns half their stake. Author royalties are welded at registration, irrevocable — write a play people use, collect rent forever.</p>
+
+</main>
+</body>
+</html>
