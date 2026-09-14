@@ -1,6 +1,6 @@
 {
- "capturedAt": 1789392403,
- "block": 62842613,
+ "capturedAt": 1789395928,
+ "block": 62877203,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
   "claimable": 689,
@@ -9,8 +9,8 @@
   "windowOpen": 0,
   "other": 0
  },
- "wethOutstanding": "4227691959346597662",
- "wethClaimable": "4063194889592386076",
+ "wethOutstanding": "4229804296486273655",
+ "wethClaimable": "4065307226732062069",
  "wethBricked": "164497069754211586",
  "devsWithClaimable": 281,
  "bricked": [
@@ -36,7 +36,7 @@
    "name": "Hold on tight",
    "deployer": "0x8735a3b6928359600cbde1957bf3cf4b92dbdc73",
    "weth": "9654596535191221",
-   "tokens": "1675416118165161658495423"
+   "tokens": "1675787303170177745705394"
   }
  ]
 }
