@@ -1,6 +1,6 @@
 {
- "capturedAt": 1789370852,
- "block": 62630201,
+ "capturedAt": 1789382984,
+ "block": 62749832,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
   "claimable": 689,
@@ -9,9 +9,9 @@
   "windowOpen": 0,
   "other": 0
  },
- "wethOutstanding": "4215015747317846045",
- "wethClaimable": "4050532668581232534",
- "wethBricked": "164483078736613511",
+ "wethOutstanding": "4221158370487467080",
+ "wethClaimable": "4056664586695133153",
+ "wethBricked": "164493783792333927",
  "devsWithClaimable": 281,
  "bricked": [
   {
@@ -35,8 +35,8 @@
    "symbol": "TOPBLAST",
    "name": "Hold on tight",
    "deployer": "0x8735a3b6928359600cbde1957bf3cf4b92dbdc73",
-   "weth": "9640605517593146",
-   "tokens": "1659311494757595230849399"
+   "weth": "9651310573313562",
+   "tokens": "1659743299915448558154461"
   }
  ]
 }
