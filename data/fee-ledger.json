@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-15T11:03:04Z",
+ "generated_at": "2026-09-15T12:03:50Z",
  "chains": {
   "4663": {
-   "block": 63608053,
-   "read_at": "2026-09-15T11:03:01Z",
+   "block": 63643891,
+   "read_at": "2026-09-15T12:03:44Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -25,7 +25,7 @@
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "229903414332204029"
+         "amount_wei": "235646973938217333"
         }
        ]
       },
@@ -52,7 +52,7 @@
         {
          "asset": "0x8cde0178a1abd1622aef593cc7328791cb9fdbdb",
          "symbol": "TOKEN",
-         "amount_wei": "30587918528663458782685"
+         "amount_wei": "38464573139675702597235"
         }
        ]
       },
@@ -79,7 +79,7 @@
         {
          "asset": "0x11c10293fb59a6cfe75ec01fc9b2a609e28a17bc",
          "symbol": "TOKEN",
-         "amount_wei": "18012212150776604826129"
+         "amount_wei": "20603724060059951515421"
         }
        ]
       },
@@ -129,13 +129,13 @@
      "contract": "0x6c71148e3aCba6c5eccEFFFFccE17dC7a43e8f98",
      "assets": {
       "WETH": {
-       "balance_wei": "392907281229548942",
-       "ops_bucket_wei": "248246781066741361",
+       "balance_wei": "144660500162807581",
+       "ops_bucket_wei": "0",
        "buyback_bucket_wei": "144660500162807581",
        "unbucketed_wei": "0",
        "epoch_cap_wei": "10000000000000000000",
-       "rolling_spent_wei": "8000000000000000",
-       "last_spend_at": 1788984180
+       "rolling_spent_wei": "248246781066741361",
+       "last_spend_at": 1789470794
       },
       "BLINK": {
        "balance_wei": "6753458880522843676",
@@ -167,7 +167,7 @@
   }
  },
  "usd_rates": {
-  "WETH": 2483.08,
+  "WETH": null,
   "source": "geckoterminal(eth mainnet WETH)",
   "note": "估值仅用于阈值;失效时退化为 WETH 计价阈值 0.06"
  }
