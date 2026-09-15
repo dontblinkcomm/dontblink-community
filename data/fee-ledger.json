@@ -1,0 +1,174 @@
+{
+ "version": "fee-ledger/0.1",
+ "generated_at": "2026-09-15T11:03:04Z",
+ "chains": {
+  "4663": {
+   "block": 63608053,
+   "read_at": "2026-09-15T11:03:01Z",
+   "layers": {
+    "lp_unclaimed": {
+     "trigger": {
+      "method": "LpLock.claimFees(address)",
+      "permissionless": true,
+      "contract": "0x137f67344563cC98b0E2A5Ee644849bc846E070D"
+     },
+     "pools": [
+      {
+       "token": "0x615A20F0D89e0925415dBAd3AE5d5eEe97137719",
+       "token_id": 1117540,
+       "pending": [
+        {
+         "asset": "0x615a20f0d89e0925415dbad3ae5d5eee97137719",
+         "symbol": "TOKEN",
+         "amount_wei": "3529785259711414844512"
+        },
+        {
+         "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
+         "symbol": "TOKEN",
+         "amount_wei": "229903414332204029"
+        }
+       ]
+      },
+      {
+       "token": "0x33533C36ea0dAb22627eef7f7C5EA44Cbe81dBdb",
+       "token_id": 1105368,
+       "pending": [
+        {
+         "asset": "0x33533c36ea0dab22627eef7f7c5ea44cbe81dbdb",
+         "symbol": "TOKEN",
+         "amount_wei": "47275652265137301797"
+        },
+        {
+         "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
+         "symbol": "TOKEN",
+         "amount_wei": "179142750967366"
+        }
+       ]
+      },
+      {
+       "token": "0x8cDe0178A1AbD1622AEF593cc7328791cB9fdBDB",
+       "token_id": 1060459,
+       "pending": [
+        {
+         "asset": "0x8cde0178a1abd1622aef593cc7328791cb9fdbdb",
+         "symbol": "TOKEN",
+         "amount_wei": "30587918528663458782685"
+        }
+       ]
+      },
+      {
+       "token": "0xEcb43252fA9f38070b4064202e00B2bB243EdbDb",
+       "token_id": 967359,
+       "pending": [
+        {
+         "asset": "0xd5f3879160bc7c32ebb4dc785f8a4f505888de68",
+         "symbol": "TOKEN",
+         "amount_wei": "55447255065454"
+        },
+        {
+         "asset": "0xecb43252fa9f38070b4064202e00b2bb243edbdb",
+         "symbol": "TOKEN",
+         "amount_wei": "6107782565408363090959"
+        }
+       ]
+      },
+      {
+       "token": "0x11C10293fB59a6CFE75Ec01FC9B2a609E28a17BC",
+       "token_id": 964659,
+       "pending": [
+        {
+         "asset": "0x11c10293fb59a6cfe75ec01fc9b2a609e28a17bc",
+         "symbol": "TOKEN",
+         "amount_wei": "18012212150776604826129"
+        }
+       ]
+      },
+      {
+       "token": "0x4f8bFC73C376177Db4aEE2cb0845CE9A7fDBDbdb",
+       "token_id": 956153,
+       "pending": [
+        {
+         "asset": "0x4f8bfc73c376177db4aee2cb0845ce9a7fdbdbdb",
+         "symbol": "TOKEN",
+         "amount_wei": "204601505903642251882262"
+        }
+       ]
+      },
+      {
+       "token": "0x1092676b67a9379978e255d3e615cB3321dbdbdB",
+       "token_id": 939817,
+       "pending": [
+        {
+         "asset": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
+         "symbol": "WETH",
+         "amount_wei": "116776165786631"
+        }
+       ]
+      }
+     ],
+     "totals_wei": {
+      "WETH": "116776165786631"
+     },
+     "meme_side_entries": 9
+    },
+    "thesis_splitters": {
+     "trigger": {
+      "method": "ThesisSplit.flush(assets)/flushEth()",
+      "permissionless": true
+     },
+     "splitters": []
+    },
+    "wink_mechanism": {
+     "trigger": {
+      "method": "converter.sync() / escrow.claim()",
+      "permissionless": true
+     },
+     "converters": []
+    },
+    "treasury": {
+     "contract": "0x6c71148e3aCba6c5eccEFFFFccE17dC7a43e8f98",
+     "assets": {
+      "WETH": {
+       "balance_wei": "392907281229548942",
+       "ops_bucket_wei": "248246781066741361",
+       "buyback_bucket_wei": "144660500162807581",
+       "unbucketed_wei": "0",
+       "epoch_cap_wei": "10000000000000000000",
+       "rolling_spent_wei": "8000000000000000",
+       "last_spend_at": 1788984180
+      },
+      "BLINK": {
+       "balance_wei": "6753458880522843676",
+       "ops_bucket_wei": "0",
+       "buyback_bucket_wei": "0",
+       "unbucketed_wei": "6753458880522843676",
+       "epoch_cap_wei": "0",
+       "rolling_spent_wei": "0",
+       "last_spend_at": 0
+      },
+      "NVDA": {
+       "balance_wei": "1470935747090499784",
+       "ops_bucket_wei": "0",
+       "buyback_bucket_wei": "0",
+       "unbucketed_wei": "1470935747090499784",
+       "epoch_cap_wei": "0",
+       "rolling_spent_wei": "0",
+       "last_spend_at": 0
+      }
+     },
+     "trigger": {
+      "ops_spend": "ops 钥匙 + 周额度",
+      "permissionless": false
+     },
+     "native_eth_wei": "58448523158212094"
+    }
+   },
+   "alerts": []
+  }
+ },
+ "usd_rates": {
+  "WETH": 2483.08,
+  "source": "geckoterminal(eth mainnet WETH)",
+  "note": "估值仅用于阈值;失效时退化为 WETH 计价阈值 0.06"
+ }
+}
