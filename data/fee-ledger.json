@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-15T23:00:22Z",
+ "generated_at": "2026-09-15T23:52:12Z",
  "chains": {
   "4663": {
-   "block": 64026794,
-   "read_at": "2026-09-15T23:00:18Z",
+   "block": 64057728,
+   "read_at": "2026-09-15T23:52:11Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -20,12 +20,12 @@
         {
          "asset": "0x615a20f0d89e0925415dbad3ae5d5eee97137719",
          "symbol": "TOKEN",
-         "amount_wei": "4611859087889835254185"
+         "amount_wei": "4725196664330629555360"
         },
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "279755519731550218"
+         "amount_wei": "282159836801095722"
         }
        ]
       },
@@ -169,6 +169,142 @@
     }
    },
    "alerts": []
+  },
+  "56": {
+   "block": 122120925,
+   "read_at": "2026-09-15T23:53:12Z",
+   "now_unix": 1789516392,
+   "layers": {
+    "feesplitter_claimable": {
+     "trigger": {
+      "method": "claimPlatform()/claimTreasury()/claimLeader()",
+      "permissionless": true
+     },
+     "splitters": [
+      {
+       "address": "0x82a6d79318eda9d145be9c96c352457e386cc6a9",
+       "community_token": "0x7b630f080807df83908b4ade46ba6396ee66b098",
+       "asset": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+       "asset_symbol": "WBNB",
+       "balance_wei": "163748622891184066",
+       "unsynced_wei": "142370837236375",
+       "sync_trigger": {
+        "method": "sync()",
+        "permissionless": true
+       },
+       "legs": [
+        {
+         "leg": "platform",
+         "recipient": "0x8b9d412e9563e1f6372d82a63c17495d95f871d8",
+         "claimable_now_wei": "56948334894550",
+         "trigger": {
+          "method": "claimPlatform()",
+          "permissionless": true
+         }
+        },
+        {
+         "leg": "treasury",
+         "recipient": "0x4344a47dca682443439ed8ac70fd400975224e5b",
+         "claimable_now_wei": "42711251170913",
+         "trigger": {
+          "method": "claimTreasury()",
+          "permissionless": true
+         }
+        },
+        {
+         "leg": "leader",
+         "recipient": "0x55e31160cd170661a887f31b9f6228e5e566a253",
+         "claimable_now_wei": "0",
+         "locked_wei": "163648963305118603",
+         "locked_until": 1789573253,
+         "period": {
+          "current": 3,
+          "lock_periods": 4,
+          "period_length_s": 604800,
+          "start_time": 1787154053
+         },
+         "trigger": {
+          "method": "claimLeader()",
+          "permissionless": true,
+          "note": "任何人可调,钱只进 leader 地址;锁仓部分到期前调用会 revert"
+         }
+        }
+       ]
+      }
+     ],
+     "totals_wei": {
+      "WBNB_claimable_now": "99659586065463",
+      "WBNB_locked": "163648963305118603"
+     }
+    },
+    "distributor_pending": {
+     "trigger": {
+      "method": "MerkleDistributor.claim(epoch,index,account,amount,proof)",
+      "permissionless": false,
+      "note": "持币人各自凭 proof 领;平台不能代领,也不该算作我们的可领余额"
+     },
+     "distributors": [
+      {
+       "address": "0xf555cf7490358805b72b56b66c0c315d00645d04",
+       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+       "asset_symbol": "WBNB",
+       "amount_wei": "1512171892220039550"
+      }
+     ],
+     "totals_wei": {
+      "WBNB": "1512171892220039550"
+     }
+    },
+    "indexvault_dust": {
+     "trigger": {
+      "method": "IndexVault.executeBuyback(amountIn,minOut)",
+      "permissionless": true
+     },
+     "clones": [
+      {
+       "address": "0x707811f1b5242d138afce6d6903fd81b9683d893",
+       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+       "asset_symbol": "WBNB",
+       "amount_wei": "456522396575555"
+      },
+      {
+       "address": "0xbedfe7a0cc0d98612de14ab94dd376260c9ec019",
+       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+       "asset_symbol": "WBNB",
+       "amount_wei": "491525158141982"
+      },
+      {
+       "address": "0x0de2363c51350aa2d06b0f239b5dec89b36e3f34",
+       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+       "asset_symbol": "WBNB",
+       "amount_wei": "100514836538472"
+      },
+      {
+       "address": "0xaaa4dbf6f87733f2d0e22d60482d6eb2557d8e14",
+       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+       "asset_symbol": "WBNB",
+       "amount_wei": "534937985526775"
+      },
+      {
+       "address": "0xeadba3fc74b8f2946c23ba5c9817edccdd2f0e5c",
+       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+       "asset_symbol": "WBNB",
+       "amount_wei": "739502153907050"
+      },
+      {
+       "address": "0x5a61896eb55aa18636d4ad488dd787e2b74714f8",
+       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+       "asset_symbol": "WBNB",
+       "amount_wei": "1679082981578684"
+      }
+     ],
+     "clone_count_total": 15,
+     "totals_wei": {
+      "WBNB": "4002085512268518"
+     }
+    }
+   },
+   "notes": []
   }
  },
  "usd_rates": {
