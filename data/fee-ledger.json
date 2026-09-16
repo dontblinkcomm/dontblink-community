@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-16T09:02:23Z",
+ "generated_at": "2026-09-16T10:02:45Z",
  "chains": {
   "4663": {
-   "block": 64385770,
-   "read_at": "2026-09-16T09:02:21Z",
+   "block": 64421723,
+   "read_at": "2026-09-16T10:02:44Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -20,12 +20,12 @@
         {
          "asset": "0x615a20f0d89e0925415dbad3ae5d5eee97137719",
          "symbol": "TOKEN",
-         "amount_wei": "5722845374042050298395"
+         "amount_wei": "5831568405659635932516"
         },
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "303702402397109938"
+         "amount_wei": "305640791328860403"
         }
        ]
       },
@@ -118,6 +118,11 @@
          "asset": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
          "symbol": "WETH",
          "amount_wei": "116776165786631"
+        },
+        {
+         "asset": "0x1092676b67a9379978e255d3e615cb3321dbdbdb",
+         "symbol": "TOKEN",
+         "amount_wei": "3404510946901116152949"
         }
        ]
       }
@@ -125,7 +130,7 @@
      "totals_wei": {
       "WETH": "446457911059835"
      },
-     "meme_side_entries": 10
+     "meme_side_entries": 11
     },
     "thesis_splitters": {
      "trigger": {
@@ -182,9 +187,9 @@
    "alerts": []
   },
   "56": {
-   "block": 122194269,
-   "read_at": "2026-09-16T09:03:27Z",
-   "now_unix": 1789549407,
+   "block": 122202261,
+   "read_at": "2026-09-16T10:03:24Z",
+   "now_unix": 1789553004,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
@@ -197,8 +202,8 @@
        "community_token": "0x7b630f080807df83908b4ade46ba6396ee66b098",
        "asset": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
        "asset_symbol": "WBNB",
-       "balance_wei": "163990933485185170",
-       "unsynced_wei": "384681431237479",
+       "balance_wei": "164086479436870554",
+       "unsynced_wei": "480227382922863",
        "sync_trigger": {
         "method": "sync()",
         "permissionless": true
@@ -207,7 +212,7 @@
         {
          "leg": "platform",
          "recipient": "0x8b9d412e9563e1f6372d82a63c17495d95f871d8",
-         "claimable_now_wei": "153872572494991",
+         "claimable_now_wei": "192090953169145",
          "trigger": {
           "method": "claimPlatform()",
           "permissionless": true
@@ -216,7 +221,7 @@
         {
          "leg": "treasury",
          "recipient": "0x4344a47dca682443439ed8ac70fd400975224e5b",
-         "claimable_now_wei": "115404429371244",
+         "claimable_now_wei": "144068214876859",
          "trigger": {
           "method": "claimTreasury()",
           "permissionless": true
@@ -226,7 +231,7 @@
          "leg": "leader",
          "recipient": "0x55e31160cd170661a887f31b9f6228e5e566a253",
          "claimable_now_wei": "0",
-         "locked_wei": "163721656483318935",
+         "locked_wei": "163750320268824550",
          "locked_until": 1789573253,
          "period": {
           "current": 3,
@@ -244,8 +249,8 @@
       }
      ],
      "totals_wei": {
-      "WBNB_claimable_now": "269277001866235",
-      "WBNB_locked": "163721656483318935"
+      "WBNB_claimable_now": "336159168046004",
+      "WBNB_locked": "163750320268824550"
      }
     },
     "distributor_pending": {
@@ -259,11 +264,11 @@
        "address": "0xf555cf7490358805b72b56b66c0c315d00645d04",
        "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
        "asset_symbol": "WBNB",
-       "amount_wei": "1514085616986206336"
+       "amount_wei": "1514759215945588299"
       }
      ],
      "totals_wei": {
-      "WBNB": "1514085616986206336"
+      "WBNB": "1514759215945588299"
      }
     },
     "indexvault_dust": {
@@ -313,7 +318,7 @@
   }
  },
  "usd_rates": {
-  "WETH": 2401.04,
+  "WETH": null,
   "source": "geckoterminal(eth mainnet WETH)",
   "note": "估值仅用于阈值;失效时退化为 WETH 计价阈值 0.06"
  }
