@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-15T23:52:12Z",
+ "generated_at": "2026-09-16T00:02:06Z",
  "chains": {
   "4663": {
-   "block": 64057728,
-   "read_at": "2026-09-15T23:52:11Z",
+   "block": 64063608,
+   "read_at": "2026-09-16T00:02:04Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -25,7 +25,7 @@
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "282159836801095722"
+         "amount_wei": "282610265309550096"
         }
        ]
       },
@@ -171,9 +171,9 @@
    "alerts": []
   },
   "56": {
-   "block": 122120925,
-   "read_at": "2026-09-15T23:53:12Z",
-   "now_unix": 1789516392,
+   "block": 122122248,
+   "read_at": "2026-09-16T00:03:07Z",
+   "now_unix": 1789516987,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
