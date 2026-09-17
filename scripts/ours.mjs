@@ -14,6 +14,14 @@
 // 输出 data/ours.json：{ at, tokens: [{token,pool,mode,name,symbol,createdBlock,gt?}] }
 // 每个端点失败都不让整轮作废；`at` 只在真拿到新数据时前进（同 snapshot.mjs 的规矩）。
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { winkLaunch, applyWinkPool, launchProvenance } from './lib/wink-index.mjs'
+
+// 发射器清单是**唯一来源**：加一种玩法 = 往 scripts/lib/launchers.json 加一条，
+// 不是往这个文件里再写一组常量。对内它是扫描源，对外同一份是 GMGN 的链上快路径。
+// （生成办法与逐地址链读证据见 ssi-launchpad-rh:infra/launch-manifest/）
+const MANIFEST = JSON.parse(await readFile(new URL('./lib/launchers.json', import.meta.url), 'utf8'))
+const LINES = MANIFEST.chains['4663'].lines
+const lineOf = (id) => LINES.find((l) => l.id === id)
 
 const RPC = 'https://rpc.mainnet.chain.robinhood.com'
 const GT = 'https://api.geckoterminal.com/api/v2/networks/robinhood'
@@ -192,6 +200,8 @@ try {
       token,
       pool: '0x' + word(lg.data, 0).slice(24),
       mode: 'v1',
+      source: 'factory',   // 币由 v1 发射器自己 CREATE —— 链上按部署者判得出来
+      provenance: launchProvenance(lg, 'LaunchCreated'),
       creator: addr(lg.topics[2]),
       name: meta.name,
       symbol: meta.symbol,
@@ -281,7 +291,10 @@ try {
     tokens.set(token, {
       token,
       pool: /^0x0+$/.test(pool) ? null : pool,
+      poolId: null,        // V4 那种 32 字节 poolId 走这个字段；Portal 线是 20 字节地址池
       mode,
+      source: 'factory',   // 币由 Portal CREATE2 发出 —— 链上按部署者判得出来
+      provenance: { ...launchProvenance(lg, 'Launched'), portalMode: parseInt(word(lg.data, 1), 16) },
       creator: addr(lg.topics[3]),
       name: meta.name,
       symbol: meta.symbol,
@@ -298,6 +311,89 @@ try {
   console.log('v2 scan failed:', String(e).slice(0, 120))
 }
 
+// ---- handler 路(mode==3)的真实玩法名：必须读 LaunchedVia ----
+//
+// 只读 Launched 会得到 mode=3 → MODE[3]='sale'，看着是对的，**但携带行是坏的**:
+// a49136c 修 MODE 映射之前记下的 handler 币停在 mode='instant'，而下面那段治愈
+// 只在「没有池子」时补问 saleResult —— **一笔没结算的公募永远没有池子**，
+// 于是 DUOS/DUOSX 被无限期留在 instant（2026-09-16 链上核过：4 枚里错 2 枚）。
+// 病根是拿「有没有池子」当「是不是公募」的证据。真证据在链上这条事件里。
+//
+// 顺带把「新玩法没登记」这件事做成**响而不是消失**：modeId 不在清单里就标 'unknown'，
+// 币照常出现。拿一个错的具体值（instant）冒充已知，比说不知道更糟。
+const V2_TOPIC_LAUNCHED_VIA = '0xe17326ee63967aea3e1e6982764442d7ebf35a1d616567c770ad64eba3dde205' // LaunchedVia(token, modeId, handler)
+const MODE_BY_ID = new Map(LINES.filter((l) => l.modeId != null).map((l) => [l.modeId, l.mode]))
+try {
+  // 全史一次扫完：至今只有 4 条，成本忽略不计，而增量游标会漏掉携带的坏行。
+  const viaLogs = await getLogs(V2_PORTAL, V2_TOPIC_LAUNCHED_VIA, V2_FROM_BLOCK, head)
+  let fixed = 0
+  for (const lg of viaLogs) {
+    const token = addr(lg.topics[1])
+    const modeId = parseInt(lg.topics[2], 16)
+    const want = MODE_BY_ID.get(modeId) ?? 'unknown'
+    const t = tokens.get(token)
+    if (t) t.handlerEvidence = { ...launchProvenance(lg, 'LaunchedVia'), modeId, handler: addr(lg.topics[3]) }
+    if (t && t.mode !== want) {
+      console.log(`handler 玩法名修正: ${t.symbol} ${token} ${t.mode}→${want} (modeId ${modeId})`)
+      t.mode = want
+      fixed++
+    }
+    if (want === 'unknown') {
+      console.log(`⚠️ modeId ${modeId} 不在清单里(handler ${addr(lg.topics[3])}) —— 新玩法上线没登记，去补 scripts/lib/launchers.json`)
+    }
+  }
+  console.log(`LaunchedVia: ${viaLogs.length} 条，修正 ${fixed} 枚`)
+} catch (e) {
+  scanFailed = true
+  console.log('LaunchedVia scan failed:', String(e).slice(0, 120))
+}
+
+// ---- wink 线(A 路)：**只认我们四个发射器发出的 WinkModeLaunched** ----
+//
+// ⛔ 不要改成「按 Doppler Airlock 一扫全有」，也不要按「克隆了谁」判。
+// 2026-09-16 逐个链读查实：wink 的币**不是我们发的** —— WINK
+// 0x4Cb8Ad81…dbDBdb 的 create2 调用方是 0x1B37D3a7…b69a(Doppler 工厂)，
+// 实现 0x3be8b97f…bc599 与那个工厂**同一笔交易**部署(块 646,841)，
+// bankr 等项目用的是同一份。那条轨道上别家的盘 musebook/META 24h $1,234 万、
+// INU/AAPL $296 万，比我们大一到两个数量级 —— 一扫进来，Trending 整个是别人的。
+// **能把我们的币和别人的币分开的，只有下面这条事件 + emitter 限定这四个地址。**
+const WINK = lineOf('wink')
+const winkScannedTo = { ...(prevScan.wink ?? {}) }
+for (const g of WINK.launchers) {
+  const key = g.address.toLowerCase()
+  const from = winkScannedTo[key] ? Math.max(g.deployBlock, winkScannedTo[key] - OVERLAP) : g.deployBlock
+  try {
+    const logs = await getLogs(g.address, WINK.deployEvent.topic0, from, head)
+    for (const lg of logs) {
+      const token = addr(lg.topics[1])
+      const previous = tokens.get(token)
+      const meta = previous ?? await erc20Meta(token).catch(() => ({}))
+      // Validate emitter + event before accepting the launch; preserve market data
+      // on overlap replays, including when GT is unavailable for the entire run.
+      tokens.set(token, winkLaunch(lg, WINK, previous, meta))
+    }
+    winkScannedTo[key] = head
+    console.log(`wink ${g.gen}: ${logs.length} launches (from ${from})`)
+  } catch (e) {
+    scanFailed = true
+    console.log(`wink ${g.gen} scan failed, cursor unchanged:`, String(e).slice(0, 120))
+  }
+}
+
+// Discover V4 pool IDs through token-matched GT results. A token contract (20 bytes)
+// must never become a V4 poolId (32 bytes), nor may another token's pool be used.
+for (const t of tokens.values()) {
+  if (t.mode !== 'wink' || t.poolId) continue
+  try {
+    const r = await fetch(`${GT}/tokens/${t.token}/pools?include=base_token`, { headers: { accept: 'application/json' } })
+    if (r.ok) {
+      const updated = applyWinkPool(t, await r.json(), Date.now())
+      if (updated.poolId) { tokens.set(t.token, updated); console.log(`wink poolId: ${t.symbol} ${updated.poolId}`) }
+    }
+  } catch { /* Keep previous evidence; next run retries discovery. */ }
+  await sleep(2_500)
+}
+
 // ---- 携带行治愈:carryPrev 原样带过来的行永远不会被重算 ----
 // mode=sale 映射修上(a49136c)之前发现的固定价公募币,被记成了 instant + 无池,
 // 而游标早已越过它们的发射块 —— 常规增量扫描永远到不了那里,坏行就被无限期携带
@@ -305,7 +401,7 @@ try {
 // 治法:对「无池子」的携带行每轮补问一次 saleResult,有结算池的就是被记坏的
 // sale 行,当场改正。当前这样的行只有个位数,每行一个 eth_call,幂等,失败即跳过。
 for (const t of tokens.values()) {
-  if (!t.pool && t.mode !== 'v1') {
+  if (!t.pool && t.mode !== 'v1' && t.mode !== 'wink') {
     const p = await salePool(t.token)
     if (p) {
       console.log(`治愈携带坏行: ${t.symbol} ${t.token} ${t.mode}→sale pool=${p}`)
@@ -328,8 +424,11 @@ for (const t of tokens.values()) {
 // v2 一共十几枚，永远落在第 1 批，而第 1 批从来没被限流过 —— 首页看的就是这些。
 // v1 拿不到新行情是可以接受的（老板 2026-08-18：「以 v2 数据为主，v1 可有可无」）。
 const isV2 = (t) => t.mode !== 'v1'
+// GT 的 pools/multi 对 32 字节 V4 poolId 和 20 字节池地址一视同仁（2026-09-16 实测
+// 两种混在一个请求里都能返回）—— 所以这里用 gtKey，而 t.pool 保持「没有就是 null」。
+const gtKey = (t) => (t.pool ?? t.poolId)?.toLowerCase() ?? null
 const withPool = [...tokens.values()]
-  .filter((t) => t.pool)
+  .filter((t) => gtKey(t))
   .sort((a, b) => (isV2(b) ? 1 : 0) - (isV2(a) ? 1 : 0) || b.createdBlock - a.createdBlock)
 let fresh = 0
 let failed = 0
@@ -353,7 +452,7 @@ for (let i = 0; i < withPool.length; i += 30) {
   let j = null
   if (MAX_BATCHES && i / 30 >= MAX_BATCHES) gtDown = true
   if (!gtDown) {
-    const url = `${GT}/pools/multi/${batch.map((t) => t.pool).join(',')}?include=base_token`
+    const url = `${GT}/pools/multi/${batch.map(gtKey).join(',')}?include=base_token`
     let strikes = 0
     for (const wait of [0, 5_000, 20_000]) {
       if (wait) await sleep(wait)
@@ -377,13 +476,13 @@ for (let i = 0; i < withPool.length; i += 30) {
   }
   if (!j) {
     failed += batch.length
-    for (const t of batch) if (prevByToken.get(t.token)?.gt) t.gt = prevByToken.get(t.token).gt
+    for (const t of batch) if (!t.gt && prevByToken.get(t.token)?.gt) t.gt = prevByToken.get(t.token).gt
     continue
   }
   const included = j.included ?? []
   const byPool = new Map((j.data ?? []).map((p) => [p.attributes.address.toLowerCase(), p]))
   for (const t of batch) {
-    const p = byPool.get(t.pool)
+    const p = byPool.get(gtKey(t))
     if (p) {
       // **只存前端用到的字段。** 第一版把整份 GT 响应搬进来，1004 枚 = 2MB，
       // 每个访客每分钟拉一次 → 多刷几下就撞 GitHub Pages 的每 IP 限流，页面整个变成
@@ -409,7 +508,7 @@ for (let i = 0; i < withPool.length; i += 30) {
         img: img && img !== 'missing.png' ? img : null,
       }
       fresh++
-    } else if (prevByToken.get(t.token)?.gt) {
+    } else if (!t.gt && prevByToken.get(t.token)?.gt) {
       t.gt = prevByToken.get(t.token).gt
     }
   }
@@ -629,7 +728,11 @@ const scan = {
   v1: v1ScannedTo ?? prevScan.v1 ?? null,
   v2: v2ScannedTo ?? prevScan.v2 ?? null,
   v2meta: v2MetaScannedTo ?? prevScan.v2meta ?? null,
+  wink: winkScannedTo,
 }
 await writeFile('data/ours.json', JSON.stringify({ at: fresh > 0 ? Date.now() : (prev?.at ?? Date.now()), scan, tokens: list }))
 console.log(`游标 → v1=${scan.v1} v2=${scan.v2}`)
 console.log(`ours.json written: ${list.length} tokens`)
+
+// GMGN API: derived from exactly the ours.json written above; failure aborts the snapshot.
+console.log("verified API:", await (await import("./gmgn-api/run.mjs")).updateRegistry());

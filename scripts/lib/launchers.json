@@ -1,0 +1,185 @@
+{
+  "$comment": [
+    "发射器单一来源清单 —— 一处配置，生成器(ours.mjs)、站点、对外登记表(GMGN)共读。",
+    "新增一种玩法 = 在 lines 里加一条。没加 = 对账层会报警，而不是静默消失。",
+    "⚠️ 本文件的每一个地址、块高、字节码判据都是 2026-09-16 逐个链读出来的，不是抄文档。",
+    "重读方法见同目录 verify.sh；publish-check 会跑它。"
+  ],
+  "version": 1,
+  "verifiedAt": { "date": "2026-09-16", "chainId": 4663, "headBlock": 64931346 },
+  "chains": {
+    "4663": {
+      "name": "Robinhood Chain",
+      "rpc": "https://rpc.mainnet.chain.robinhood.com",
+      "explorer": "https://robinhoodchain.blockscout.com",
+      "deployerKeys": [
+        { "address": "0x661520f9A96eE6b7CF33308906C5965cC98E56a4", "role": "deployer(主)" },
+        { "address": "0x73461ffd0e7f29753039f5434fA3fDcE11fB985D", "role": "deployer(次)" },
+        { "address": "0xc1C52bA9CdF0E2e0169A8e6e8bD6B7C75a797c53", "role": "deployer(v1 时期)" }
+      ],
+      "lines": [
+        {
+          "id": "v1",
+          "mode": "v1",
+          "label": "V3LaunchpadGatedMax（第一代，已停止新发）",
+          "launcher": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
+          "codeSize": 10125,
+          "deployBlock": 31524140,
+          "deployTx": "0xa5e8f11251da39c18eb1126f822ae8f79909c86859a537ad362c5624afb585e2",
+          "blockscoutVerified": true,
+          "contractName": "V3LaunchpadGatedMax",
+          "deployEvent": {
+            "name": "LaunchCreated(address indexed token, address indexed deployer, address pool, uint256 tokenId, uint64 windowEnd)",
+            "topic0": "0xa84c89db4ef0ae60697badbc52ac5cd74ad3b5ba62c9152b523bbb964f2d7388"
+          },
+          "tokenDeployer": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
+          "tokenShape": {
+            "kind": "full",
+            "note": "不是代理。每枚币都是同一份 2840 字节完整运行时。",
+            "runtimeSize": 2840,
+            "runtimeKeccak": "0x2975ca40ac558d0918d835e591dec31757b8237b32e6bd893da5aea21ed51211"
+          },
+          "chainJudgable": true,
+          "gmgnSource": "factory",
+          "launchCount": 1047,
+          "firstBlock": 31531528,
+          "lastBlock": 61160981
+        },
+        {
+          "id": "portal",
+          "mode": "instant | queue | curve | sale（按 Launched.mode 分）",
+          "label": "DontblinkPortal（主线，代理可升级）",
+          "launcher": "0x7a4EB7F99833178c6463184bd0D8d17b6FC2d59c",
+          "codeSize": 669,
+          "deployBlock": 38010592,
+          "deployTx": "0xc71db52cdbe91c4e8c37566a23c84a79cfcc381fe9240e87006140c6042df38c",
+          "blockscoutVerified": true,
+          "contractName": "PortalProxy",
+          "implementation": {
+            "address": "0x3f2D96DdBCDc7c1D2a625A3041BAFdb7282CC366",
+            "codeSize": 23796,
+            "deployBlock": 58765131,
+            "blockscoutVerified": true,
+            "verifiedAt": "2026-09-17",
+            "sourceCommit": "dontblink-mech 7b6b61f",
+            "note": "2026-09-16 发现未验证(代理验了、实现没验，而扫描器读的是实现)，同日补验通过。"
+          },
+          "deployEvent": {
+            "name": "Launched(uint256 indexed nonce, address indexed token, address indexed creator, uint16 version, uint8 mode, address quote, address pool, uint256 tokenId, uint256 saleId, uint64 windowEnd)",
+            "topic0": "0x34a31071e22e927693791373b8825f9c18452461b3cea148ec4e2f34b1154f31",
+            "companion": {
+              "name": "LaunchedVia(address indexed token, uint16 indexed modeId, address indexed handler)",
+              "topic0": "0xe17326ee63967aea3e1e6982764442d7ebf35a1d616567c770ad64eba3dde205",
+              "note": "mode==3(Handler) 时必须再读这条才知道是哪种玩法；只读 Launched 会把它当 instant。"
+            }
+          },
+          "tokenDeployer": "0x7a4EB7F99833178c6463184bd0D8d17b6FC2d59c",
+          "tokenShape": {
+            "kind": "eip1167",
+            "byteLength": 45,
+            "prefix": "0x363d3d373d3d3d363d73",
+            "suffix": "5af43d82803e903d91602b57fd5bf3",
+            "implAt": "字节 10..30（prefix 之后的 20 字节）",
+            "implementations": [
+              { "address": "0xbdb3695972c977488f3b45607ff35432b5497702", "name": "BlinkToken(一代)", "deployBlock": 38010452, "blockscoutVerified": true, "exclusive": true, "tokens": 77 },
+              { "address": "0x86cb13727d75db67646bc425e747e1307e782739", "name": "BlinkToken(二代)", "deployBlock": 55318460, "blockscoutVerified": true, "exclusive": true, "tokens": 26 },
+              { "address": "0x36c48e7a99f6a5e9c05ab4d1af972d9a8c36df50", "name": "DividendToken", "deployBlock": 40976602, "blockscoutVerified": true, "exclusive": true, "tokens": 7 }
+            ]
+          },
+          "chainJudgable": true,
+          "gmgnSource": "factory",
+          "cloneCriterionSafe": true,
+          "launchCount": 110,
+          "firstBlock": 38461716
+        },
+        {
+          "id": "portal-handler-splitsale",
+          "mode": "sale",
+          "label": "SplitSale handler（Portal launchVia，modeId=8）",
+          "launcher": "0x1edcf858ef8b95bff17d0194016b5169ea0ab3b4",
+          "deployBlock": 58701863,
+          "deployTx": "0x5ff63235d9c870bdcd5825616ed91abd66a20da00a00eb15a65e4353010eca21",
+          "blockscoutVerified": true,
+          "contractName": "SplitSale",
+          "modeId": 8,
+          "deployEvent": {
+            "name": "LaunchedVia(address,uint16,address)",
+            "topic0": "0xe17326ee63967aea3e1e6982764442d7ebf35a1d616567c770ad64eba3dde205",
+            "note": "币本身仍由 Portal CREATE2 发出，所以链上按部署者仍判得出是我们的；只是玩法名要靠这条事件。"
+          },
+          "tokenDeployer": "0x7a4EB7F99833178c6463184bd0D8d17b6FC2d59c",
+          "chainJudgable": true,
+          "gmgnSource": "factory",
+          "launchCount": 4
+        },
+        {
+          "id": "wink",
+          "mode": "wink",
+          "label": "wink mode（3.3% 税 → BLINK 地板金库），骑 Doppler Airlock 轨道",
+          "launchers": [
+            { "gen": "v1", "address": "0xaaE8cBEb197d614ee42ba0E014df65bcD47992a7", "codeSize": 17364, "deployBlock": 58645731, "blockscoutVerified": true, "verifiedAt": "2026-09-17", "sourceCommit": "dontblink-mech b335ea0", "launchCount": 1 },
+            { "gen": "v2", "address": "0xE75303E87B1620BdFe3D50a05a6B36f294993092", "codeSize": 17084, "deployBlock": 58798208, "blockscoutVerified": false, "sourceCommit": "dontblink-mech aea0361", "bytecodeMatches": true, "launchCount": 0, "note": "字节码已与 aea0361 逐字节核对一致，验证排队中(Blockscout 限流)。" },
+            { "gen": "v3", "address": "0xEd37ED0e988DA716C3F2Bb499E64E0b83F4863b8", "codeSize": 17256, "deployBlock": 59338682, "blockscoutVerified": true, "launchCount": 4 },
+            { "gen": "v4", "address": "0xc4958b059d5142122304f3f11cbd5961f4b0dd90", "codeSize": 17510, "deployBlock": 61954135, "blockscoutVerified": true, "launchCount": 0, "note": "带 ticker 查重，Safe 批次签完才启用" }
+          ],
+          "deployEvent": {
+            "name": "WinkModeLaunched(address indexed asset, address indexed creator, address vault, address converter, address escrow, address platformSink)",
+            "topic0": "0x23bb79ba8d70069c7ce173aefc71b8653ddd7335a04c12ee74532e41d9f8e457"
+          },
+          "tokenDeployer": "0x1B37D3a72082029c44B35B604Ea473617580b69a",
+          "tokenShape": {
+            "kind": "solady-clone",
+            "byteLength": 44,
+            "prefix": "0x3d3d3d3d363d3d37363d73",
+            "suffix": "5af43d3d93803e602a57fd5bf3",
+            "implementations": [
+              { "address": "0x3be8b97fd0e713b5abe0649fa830223b6b4bc599", "name": "DopplerERC20V1", "deployBlock": 646841, "blockscoutVerified": true, "exclusive": false }
+            ]
+          },
+          "chainJudgable": false,
+          "gmgnSource": "registered",
+          "cloneCriterionSafe": false,
+          "whyNotChainJudgable": [
+            "币不是我们发的：WINK 0x4Cb8Ad81…dbDBdb 的 create2 调用方是 0x1B37D3a7…b69a（Doppler DopplerERC20V1Factory），不是我们的发射器。",
+            "实现也不是我们的：0x3be8b97f…bc599 与 Doppler 工厂同一笔交易部署（0xb53eb826…f7c9，块 646841），bankr 等项目共用同一份。",
+            "所以「谁部署的」和「克隆了谁」两条判据都会把别人的币算成我们的。唯一可靠标记是上面那条 WinkModeLaunched 事件，且必须限定 emitter 为上面四个发射器地址。"
+          ],
+          "launchCount": 5,
+          "tokens": [
+            { "addr": "0x6cb2bd2e279cfeb05ef91b143b551b30ba6bf2c7", "symbol": "3835",  "block": 58666244, "by": "v1" },
+            { "addr": "0xb31f8b6bc07eae0033d829be30444423e1dbdbdb", "symbol": "TESTW", "block": 59813966, "by": "v3" },
+            { "addr": "0xa8475c8458d753a4c8cb52d98fd9889fca40dbdb", "symbol": "4425",  "block": 59849063, "by": "v3" },
+            { "addr": "0x4e26da8ef58bf50983a21dc77b8b11a78b61dbdb", "symbol": "5656",  "block": 59850002, "by": "v3" },
+            { "addr": "0x4cb8ad81df8ed2e9f7fb04452f435b5726dbdbdb", "symbol": "Wink",  "block": 60094883, "by": "v3" }
+          ]
+        },
+        {
+          "id": "thesis",
+          "mode": "thesis",
+          "label": "ThesisLauncher（已部署，至今 0 枚）",
+          "launcher": "0x937a801495452D835312826199D128b068ef312b",
+          "codeSize": 2599,
+          "deployBlock": 52811685,
+          "deployTx": "0x177f65b210b1971694accb39a057622315df356eb04e92612baa9dd7a23c7330",
+          "blockscoutVerified": false,
+          "deployEvent": {
+            "name": "ThesisLaunched(address indexed token, address indexed author, address indexed launcher, address split, address pool)",
+            "topic0": "0x5f8e5ec04c73e041523ceb45b7351a089b4839cf630cc26d4839f186a4e6d169"
+          },
+          "tokenDeployer": "0x7a4EB7F99833178c6463184bd0D8d17b6FC2d59c",
+          "chainJudgable": true,
+          "gmgnSource": "factory",
+          "launchCount": 0,
+          "note": "它调 Portal 发币，所以币仍是 Portal CREATE2 出来的。链上全史 0 条 ThesisLaunched —— 对外清单里要写「已登记、尚无产出」，不要写成在用。"
+        }
+      ],
+      "notLaunchers": [
+        { "address": "0xfD6aa07b5df9808aEB786A29c2685E8965246d39", "name": "CurveModule", "codeSize": 10156, "deployBlock": 38010778, "blockscoutVerified": true, "why": "内盘毕业建池模块，不发币。别放进对外的「工厂地址」清单。" },
+        { "address": "0x1B37D3a72082029c44B35B604Ea473617580b69a", "name": "DopplerERC20V1Factory", "codeSize": 1912, "deployBlock": null, "deployTx": "0xb53eb8261ef8e76f3bb89c08dd5ca742408ec9911ed5cb0a32ac3a92dc59f7c9", "blockscoutVerified": true, "why": "⛔ 第三方共用工厂（bankr 等也在用）。绝不能作为我们的判据 —— 会给别人的币打上我们的名字。" }
+      ]
+    }
+  },
+  "offChainOnly": [
+    { "id": "z500", "chainId": 56, "gmgnSource": "registered", "why": "骑 four.meme 的发射轨道，链上没有我们的工厂/实现痕迹，只能走登记表。" }
+  ]
+}

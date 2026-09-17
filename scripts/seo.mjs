@@ -170,3 +170,6 @@ await writeFile('robots.txt', `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap
 await writeFile('404.html', tpl)
 
 console.log(`seo: ${stubs} token pages, ${imgs} images, sitemap ${urls.length} urls, 404.html synced`)
+
+// GMGN_API_AFTER_SEO: the existing workflow reruns SEO after rebase, before staging.
+console.log("verified API:", await (await import("./gmgn-api/run.mjs")).updateRegistry());
