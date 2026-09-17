@@ -1,17 +1,17 @@
 {
- "capturedAt": 1789519639,
- "block": 64090544,
+ "capturedAt": 1789640626,
+ "block": 65292508,
  "launchpad": "0xF441cc979fa862f2674b9188A7b529caFd3ce204",
  "counts": {
-  "claimable": 689,
-  "nothing": 307,
+  "claimable": 690,
+  "nothing": 306,
   "capped": 3,
   "windowOpen": 0,
   "other": 0
  },
- "wethOutstanding": "4368595248024961849",
- "wethClaimable": "4203216599861210768",
- "wethBricked": "165378648163751081",
+ "wethOutstanding": "4488938154712211997",
+ "wethClaimable": "4323148823976925443",
+ "wethBricked": "165789330735286554",
  "devsWithClaimable": 281,
  "bricked": [
   {
@@ -20,7 +20,7 @@
    "name": "Thesis",
    "deployer": "0x7e5564abf6452754a68f517a66745a11520ee0e0",
    "weth": "106364959550682161",
-   "tokens": "14309094222279829355914835"
+   "tokens": "14520285478312720356311208"
   },
   {
    "token": "0xf40a0dd283e2edf74e20df2eeb66c5c99124bcfa",
@@ -28,15 +28,15 @@
    "name": "fomocat",
    "deployer": "0x4cf05ae79736e2ecb461583873385943b36b0012",
    "weth": "48477513668338204",
-   "tokens": "12744184709325295477334641"
+   "tokens": "12794136172417722852272496"
   },
   {
    "token": "0xc85d3a5c220fa6aff88d149a73c4351e9dc41db2",
    "symbol": "TOPBLAST",
    "name": "Hold on tight",
    "deployer": "0x8735a3b6928359600cbde1957bf3cf4b92dbdc73",
-   "weth": "10536174944730716",
-   "tokens": "1907982656578370242283675"
+   "weth": "10946857516266189",
+   "tokens": "2193125537254419485071697"
   }
  ]
 }
