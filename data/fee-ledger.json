@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-17T07:02:33Z",
+ "generated_at": "2026-09-17T08:00:15Z",
  "chains": {
   "4663": {
-   "block": 65172604,
-   "read_at": "2026-09-17T07:02:32Z",
+   "block": 65207003,
+   "read_at": "2026-09-17T08:00:14Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -25,7 +25,7 @@
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "324036726295860050"
+         "amount_wei": "324351891219207162"
         }
        ]
       },
@@ -187,9 +187,9 @@
    "alerts": []
   },
   "56": {
-   "block": 122370132,
-   "read_at": "2026-09-17T07:03:13Z",
-   "now_unix": 1789628593,
+   "block": 122377818,
+   "read_at": "2026-09-17T08:00:54Z",
+   "now_unix": 1789632054,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
@@ -202,8 +202,8 @@
        "community_token": "0x7b630f080807df83908b4ade46ba6396ee66b098",
        "asset": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
        "asset_symbol": "WBNB",
-       "balance_wei": "164220854420841103",
-       "unsynced_wei": "614602366893412",
+       "balance_wei": "164433997408732609",
+       "unsynced_wei": "827745354784918",
        "sync_trigger": {
         "method": "sync()",
         "permissionless": true
@@ -212,7 +212,7 @@
         {
          "leg": "platform",
          "recipient": "0x8b9d412e9563e1f6372d82a63c17495d95f871d8",
-         "claimable_now_wei": "245840946757364",
+         "claimable_now_wei": "331098141913967",
          "trigger": {
           "method": "claimPlatform()",
           "permissionless": true
@@ -221,7 +221,7 @@
         {
          "leg": "treasury",
          "recipient": "0x4344a47dca682443439ed8ac70fd400975224e5b",
-         "claimable_now_wei": "184380710068024",
+         "claimable_now_wei": "248323606435476",
          "trigger": {
           "method": "claimTreasury()",
           "permissionless": true
@@ -231,7 +231,7 @@
          "leg": "leader",
          "recipient": "0x55e31160cd170661a887f31b9f6228e5e566a253",
          "claimable_now_wei": "0",
-         "locked_wei": "163790632764015715",
+         "locked_wei": "163854575660383166",
          "locked_until": 1790178053,
          "period": {
           "current": 4,
@@ -249,8 +249,8 @@
       }
      ],
      "totals_wei": {
-      "WBNB_claimable_now": "430221656825388",
-      "WBNB_locked": "163790632764015715"
+      "WBNB_claimable_now": "579421748349443",
+      "WBNB_locked": "163854575660383166"
      }
     },
     "distributor_pending": {
@@ -264,11 +264,11 @@
        "address": "0xf555cf7490358805b72b56b66c0c315d00645d04",
        "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
        "asset_symbol": "WBNB",
-       "amount_wei": "1515706559582580682"
+       "amount_wei": "1517209217647215803"
       }
      ],
      "totals_wei": {
-      "WBNB": "1515706559582580682"
+      "WBNB": "1517209217647215803"
      }
     },
     "indexvault_dust": {
