@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-17T11:02:22Z",
+ "generated_at": "2026-09-17T12:03:39Z",
  "chains": {
   "4663": {
-   "block": 65315475,
-   "read_at": "2026-09-17T11:02:21Z",
+   "block": 65352020,
+   "read_at": "2026-09-17T12:03:38Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -25,7 +25,7 @@
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "325414951170324949"
+         "amount_wei": "325710617244554662"
         }
        ]
       },
@@ -192,9 +192,9 @@
    "alerts": []
   },
   "56": {
-   "block": 122402388,
-   "read_at": "2026-09-17T11:05:15Z",
-   "now_unix": 1789643115,
+   "block": 122410258,
+   "read_at": "2026-09-17T12:04:18Z",
+   "now_unix": 1789646658,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
@@ -323,7 +323,7 @@
   }
  },
  "usd_rates": {
-  "WETH": null,
+  "WETH": 2441.04,
   "source": "geckoterminal(eth mainnet WETH)",
   "note": "估值仅用于阈值;失效时退化为 WETH 计价阈值 0.06"
  }
