@@ -1,0 +1,1 @@
+import{dl as o}from"./index-D58cIdQE.js";import{F as e}from"./WalletIcon-CIzow3e5.js";const l=({icon:t,name:s})=>typeof t=="string"?o.jsx("img",{alt:`${s||"wallet"} logo`,src:t,style:{height:24,width:24,borderRadius:4}}):t===void 0?o.jsx(e,{style:{height:24,width:24}}):t?o.jsx(t,{style:{height:24,width:24}}):null;export{l as i};
