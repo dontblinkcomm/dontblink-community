@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-17T19:54:50.387Z",
+ "timestamp": "2026-09-17T22:41:21.184Z",
  "version": {
   "major": 1,
-  "minor": 22,
+  "minor": 23,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,13 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0x964D2B763BEcFD9C015a2a3C9f648bD85bDBdbDB",
+   "name": "Dontblink QA Reject",
+   "symbol": "QAREJ",
+   "decimals": 18
+  },
   {
    "chainId": 4663,
    "address": "0xd22171a3194fC33A14eb9175766C1AC1159E80d4",
