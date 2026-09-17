@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-17T18:49:02Z",
+ "generated_at": "2026-09-17T21:04:45Z",
  "chains": {
   "4663": {
-   "block": 65593938,
-   "read_at": "2026-09-17T18:48:59Z",
+   "block": 65674832,
+   "read_at": "2026-09-17T21:04:43Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -57,7 +57,7 @@
         {
          "asset": "0x8cde0178a1abd1622aef593cc7328791cb9fdbdb",
          "symbol": "TOKEN",
-         "amount_wei": "139191661840882490716963"
+         "amount_wei": "148574821277315738857701"
         }
        ]
       },
@@ -84,7 +84,7 @@
         {
          "asset": "0x11c10293fb59a6cfe75ec01fc9b2a609e28a17bc",
          "symbol": "TOKEN",
-         "amount_wei": "149970953610874201353830"
+         "amount_wei": "151880633645783811444119"
         },
         {
          "asset": "0x1b0e319c6a659f002271b69db8a7df2f911c153e",
@@ -197,15 +197,15 @@
       "ops_spend": "ops 钥匙 + 周额度",
       "permissionless": false
      },
-     "native_eth_wei": "58448523158212094"
+     "native_eth_wei": "59448523158212094"
     }
    },
    "alerts": []
   },
   "56": {
-   "block": 122464310,
-   "read_at": "2026-09-17T18:49:52Z",
-   "now_unix": 1789670992,
+   "block": 122482478,
+   "read_at": "2026-09-17T21:06:08Z",
+   "now_unix": 1789679168,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
