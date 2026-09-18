@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Proposed dontblink launch notification; recipient contract not agreed",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "type",
+    "chainId",
+    "token",
+    "source",
+    "launchedOnDontblink",
+    "platformBadge",
+    "launch",
+    "registryUrl"
+  ],
+  "properties": {
+    "schema": {
+      "const": "dontblink.launch-notification.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^dontblink:launch:4663:0x[0-9a-f]{64}:[0-9]+:0x[0-9a-f]{40}:0x[0-9a-f]{40}$"
+    },
+    "type": {
+      "const": "launch.confirmed"
+    },
+    "chainId": {
+      "const": 4663
+    },
+    "token": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{40}$"
+    },
+    "source": {
+      "enum": [
+        "factory",
+        "clone",
+        "registered"
+      ]
+    },
+    "launchedOnDontblink": {
+      "type": "boolean"
+    },
+    "platformBadge": {
+      "$ref": "platform-badge.v1.schema.json"
+    },
+    "launch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transactionHash",
+        "blockHash",
+        "blockNumber",
+        "logIndex",
+        "emitter",
+        "topic0"
+      ],
+      "properties": {
+        "transactionHash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-f]{64}$"
+        },
+        "blockHash": {
+          "type": "string",
+          "pattern": "^0x[0-9a-f]{64}$"
+        },
+        "blockNumber": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "logIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "emitter": {
+          "type": "string",
+          "pattern": "^0x[0-9a-f]{40}$"
+        },
+        "topic0": {
+          "type": "string",
+          "pattern": "^0x[0-9a-f]{64}$"
+        }
+      }
+    },
+    "registryUrl": {
+      "type": "string",
+      "pattern": "^https://dontblink\\.community/data/verified/4663/0x[0-9a-f]{40}\\.json$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source": {
+            "const": "registered"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "launchedOnDontblink": {
+            "const": false
+          },
+          "platformBadge": {
+            "properties": {
+              "relation": {
+                "const": "mechanism_provider"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "launchedOnDontblink": {
+            "const": true
+          },
+          "platformBadge": {
+            "properties": {
+              "relation": {
+                "const": "launch_origin"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

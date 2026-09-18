@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dontblink platform attribution badge (additive, not token logo)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "platformId",
+    "label",
+    "placement",
+    "logo",
+    "relation",
+    "description",
+    "tokenLogoUnchanged",
+    "disclaimer"
+  ],
+  "properties": {
+    "schema": {
+      "const": "dontblink.platform-badge.v1"
+    },
+    "platformId": {
+      "const": "dontblink"
+    },
+    "label": {
+      "const": "dontblink"
+    },
+    "placement": {
+      "const": "token_avatar_corner"
+    },
+    "logo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url",
+        "mediaType",
+        "sha256"
+      ],
+      "properties": {
+        "url": {
+          "const": "https://dontblink.community/brand/dontblink-platform-badge.png"
+        },
+        "mediaType": {
+          "const": "image/png"
+        },
+        "sha256": {
+          "const": "8cded1abeec35385f866941c8d7d11b5686e5a4e4c5a35beaf123ab65e385dff"
+        }
+      }
+    },
+    "relation": {
+      "enum": [
+        "launch_origin",
+        "mechanism_provider"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "tokenLogoUnchanged": {
+      "const": true
+    },
+    "disclaimer": {
+      "const": "Platform attribution only. Not an audit, risk rating, listing approval or LP-lock guarantee."
+    }
+  }
+}

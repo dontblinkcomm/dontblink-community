@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { address, SCHEMA, DISCLAIMER } from './generate.mjs'
 import { validateTokenLifecycle, validateDirectoryLifecycle } from './lifecycle.mjs'
+import { validatePlatformBadge } from './platform-badge.mjs'
 
 export function parseJsonResponse(response, body, expectedSchema) {
   if (!response.ok) return { recognized: null, reason: `http_${response.status}`, transportStatus: response.status }
@@ -27,6 +28,7 @@ export function validateRecord(record, chainId, token) {
   assert.equal(record.lpLockContract, null)
   assert(Number.isFinite(Date.parse(record.sourceSnapshotAt)))
   assert(Number.isFinite(Date.parse(record.generatedAt)))
+  validatePlatformBadge(record)
   if (record.recognized === null) { assert.equal(record.reason, 'not_in_current_registry'); return }
   assert(['factory', 'clone', 'registered'].includes(record.source))
   assert.equal(record.launchedOnDontblink, record.source !== 'registered')

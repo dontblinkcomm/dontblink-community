@@ -5,6 +5,7 @@ import { readFile, writeFile, mkdir, rename } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { attachLifecycle } from './lifecycle.mjs'
+import { platformBadgeFor } from './platform-badge.mjs'
 
 export const SOURCE_URL = 'https://dontblink.community/data/ours.json'
 export const SCHEMA = 'dontblink.verified.v1'
@@ -113,6 +114,7 @@ export function buildRegistry({ snapshot, manifest, inputSha256, generatedAt = n
       audited: false, riskAssessed: false, disclaimer: DISCLAIMER,
     })
   }
+  for (const record of records) record.platformBadge = platformBadgeFor(record)
   records.sort((a, b) => a.token.localeCompare(b.token))
   const scan = Object.fromEntries(Object.entries(snapshot.scan ?? {}).map(([key, value]) => [key,
     key === 'wink' && value && typeof value === 'object' && !Array.isArray(value)
