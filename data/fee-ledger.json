@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-18T16:03:58Z",
+ "generated_at": "2026-09-18T17:04:04Z",
  "chains": {
   "4663": {
-   "block": 66353475,
-   "read_at": "2026-09-18T16:03:57Z",
+   "block": 66389284,
+   "read_at": "2026-09-18T17:04:03Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -36,7 +36,7 @@
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "328892256005074080"
+         "amount_wei": "328985334397439997"
         }
        ]
       },
@@ -225,9 +225,9 @@
    "alerts": []
   },
   "56": {
-   "block": 122634244,
-   "read_at": "2026-09-18T16:04:44Z",
-   "now_unix": 1789747484,
+   "block": 122642246,
+   "read_at": "2026-09-18T17:04:46Z",
+   "now_unix": 1789751086,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
@@ -240,8 +240,8 @@
        "community_token": "0x7b630f080807df83908b4ade46ba6396ee66b098",
        "asset": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
        "asset_symbol": "WBNB",
-       "balance_wei": "164433997408732609",
-       "unsynced_wei": "827745354784918",
+       "balance_wei": "164498881298689580",
+       "unsynced_wei": "892629244741889",
        "sync_trigger": {
         "method": "sync()",
         "permissionless": true
@@ -250,7 +250,7 @@
         {
          "leg": "platform",
          "recipient": "0x8b9d412e9563e1f6372d82a63c17495d95f871d8",
-         "claimable_now_wei": "331098141913967",
+         "claimable_now_wei": "357051697896755",
          "trigger": {
           "method": "claimPlatform()",
           "permissionless": true
@@ -259,7 +259,7 @@
         {
          "leg": "treasury",
          "recipient": "0x4344a47dca682443439ed8ac70fd400975224e5b",
-         "claimable_now_wei": "248323606435476",
+         "claimable_now_wei": "267788773422567",
          "trigger": {
           "method": "claimTreasury()",
           "permissionless": true
@@ -269,7 +269,7 @@
          "leg": "leader",
          "recipient": "0x55e31160cd170661a887f31b9f6228e5e566a253",
          "claimable_now_wei": "0",
-         "locked_wei": "163854575660383166",
+         "locked_wei": "163874040827370258",
          "locked_until": 1790178053,
          "period": {
           "current": 4,
@@ -287,8 +287,8 @@
       }
      ],
      "totals_wei": {
-      "WBNB_claimable_now": "579421748349443",
-      "WBNB_locked": "163854575660383166"
+      "WBNB_claimable_now": "624840471319322",
+      "WBNB_locked": "163874040827370258"
      }
     },
     "distributor_pending": {
@@ -302,11 +302,11 @@
        "address": "0xf555cf7490358805b72b56b66c0c315d00645d04",
        "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
        "asset_symbol": "WBNB",
-       "amount_wei": "1517209217647215803"
+       "amount_wei": "1517666649071412456"
       }
      ],
      "totals_wei": {
-      "WBNB": "1517209217647215803"
+      "WBNB": "1517666649071412456"
      }
     },
     "indexvault_dust": {
@@ -356,7 +356,7 @@
   }
  },
  "usd_rates": {
-  "WETH": null,
+  "WETH": 2592.96,
   "source": "geckoterminal(eth mainnet WETH)",
   "note": "估值仅用于阈值;失效时退化为 WETH 计价阈值 0.06"
  }
