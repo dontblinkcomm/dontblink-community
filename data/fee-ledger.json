@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-18T02:04:45Z",
+ "generated_at": "2026-09-18T03:02:45Z",
  "chains": {
   "4663": {
-   "block": 65853754,
-   "read_at": "2026-09-18T02:04:44Z",
+   "block": 65888278,
+   "read_at": "2026-09-18T03:02:44Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -214,9 +214,9 @@
    "alerts": []
   },
   "56": {
-   "block": 122522785,
-   "read_at": "2026-09-18T02:08:30Z",
-   "now_unix": 1789697310,
+   "block": 122530439,
+   "read_at": "2026-09-18T03:05:56Z",
+   "now_unix": 1789700756,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
@@ -345,7 +345,7 @@
   }
  },
  "usd_rates": {
-  "WETH": 2457.76,
+  "WETH": null,
   "source": "geckoterminal(eth mainnet WETH)",
   "note": "估值仅用于阈值;失效时退化为 WETH 计价阈值 0.06"
  }
