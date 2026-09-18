@@ -1,7 +1,7 @@
 {
   "schema": "dontblink.gmgn.install.v1",
   "files": {
-    "scripts/ours.mjs": "fb5fa251405ee8bc61d195e487138c339450c7cefad490fc208bfd02923ecf62",
+    "scripts/ours.mjs": "c3000f5593f761bf7e1b80b44d0819e733e651edce1064d255a281db12a0593b",
     "scripts/seo.mjs": "a5eb64ddd17f5c1bf2f149f0532ad8c0a99f7a7b21fafecb6714f43814adfd75",
     ".github/workflows/boards-snapshot.yml": "70488ffb295799b8018e93be1c2e19bc4025b093819b2c36dadc3d5c4cb4b73e"
   }

@@ -6,12 +6,19 @@ import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { buildRegistry, writeRegistry, sha256 } from './generate.mjs'
 import { verifyDirectory } from './verify.mjs'
+import { emptyLifecycleInput, refreshTheses, validateLifecycleInput } from './lifecycle.mjs'
 
-export async function updateRegistry(root = process.cwd(), manifestPath = new URL('../lib/launchers.json', import.meta.url)) {
+export async function updateRegistry(root = process.cwd(), manifestPath = new URL('../lib/launchers.json', import.meta.url), options = {}) {
   const input = resolve(root, 'data/ours.json')
   const output = resolve(root, 'data/verified')
   const raw = await readFile(input, 'utf8')
-  const registry = buildRegistry({ snapshot: JSON.parse(raw), manifest: JSON.parse(await readFile(manifestPath, 'utf8')), inputSha256: sha256(raw) })
+  let lifecycleInput = emptyLifecycleInput()
+  try {
+    const old = JSON.parse(await readFile(resolve(output, 'index.json'), 'utf8'))
+    if (old.lifecycle) { validateLifecycleInput(old.lifecycle.inputs); lifecycleInput = old.lifecycle.inputs }
+  } catch (error) { if (error.code !== 'ENOENT') throw error }
+  if (options.refreshLifecycle) lifecycleInput = await refreshTheses(lifecycleInput, options)
+  const registry = buildRegistry({ snapshot: JSON.parse(raw), manifest: JSON.parse(await readFile(manifestPath, 'utf8')), inputSha256: sha256(raw), lifecycleInput })
   // Stage outside the Git checkout: failed validation must not expose partial files to git add -A.
   const temporary = await mkdtemp(join(tmpdir(), 'dontblink-verified-'))
   const stage = join(temporary, 'verified')

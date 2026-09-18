@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dontblink.community/scripts/gmgn-api/schema/lifecycle-token.v1.schema.json",
+  "$comment": "Apply to the optional lifecycle object, not the outer verified.v1 response. This URL becomes available only after source CI publication. Cross-record identities, hashes and chronology additionally require verify.mjs.",
+  "type": "object",
+  "required": [
+    "schema",
+    "projectId",
+    "chainId",
+    "token",
+    "origin",
+    "launch",
+    "gmgn"
+  ],
+  "properties": {
+    "schema": {
+      "const": "dontblink.lifecycle.token.v1"
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^token:4663:0x[0-9a-f]{40}$"
+    },
+    "chainId": {
+      "const": 4663
+    },
+    "token": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{40}$"
+    },
+    "origin": {
+      "type": "object",
+      "required": [
+        "status",
+        "theses"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "service_record_observed",
+            "unknown"
+          ]
+        },
+        "theses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "thesisId",
+              "uri",
+              "author",
+              "createdAt",
+              "relationship",
+              "boundAt",
+              "boundBy",
+              "ownershipVerified",
+              "evidence"
+            ],
+            "properties": {
+              "thesisId": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{12}$"
+              },
+              "uri": {
+                "type": "string",
+                "format": "uri"
+              },
+              "author": {
+                "type": "string",
+                "pattern": "^0x[0-9a-f]{40}$"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "relationship": {
+                "const": "service_reported_exact_token_reference"
+              },
+              "boundAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "boundBy": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-f]{40}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "ownershipVerified": {
+                "const": false
+              },
+              "evidence": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "uri",
+                  "id",
+                  "observedAt",
+                  "responseSha256",
+                  "recordsSha256"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "thesis_service_record"
+                  },
+                  "uri": {
+                    "const": "https://dontblink-thesis.lawson-e69.workers.dev/board"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{12}$"
+                  },
+                  "observedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "responseSha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "recordsSha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "maxItems": 2000
+        }
+      },
+      "additionalProperties": false
+    },
+    "launch": {
+      "type": "object",
+      "required": [
+        "status",
+        "createdAt",
+        "evidence"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "event_observed",
+            "registry_observed"
+          ]
+        },
+        "createdAt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "kind",
+                "line",
+                "emitter",
+                "topic0",
+                "transactionHash",
+                "blockNumber"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "event"
+                },
+                "line": {
+                  "enum": [
+                    "v1",
+                    "portal",
+                    "wink"
+                  ]
+                },
+                "emitter": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-f]{40}$"
+                },
+                "topic0": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-f]{64}$"
+                },
+                "transactionHash": {
+                  "type": "string",
+                  "pattern": "^0x[0-9a-f]{64}$"
+                },
+                "blockNumber": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "kind",
+                "uri",
+                "inputSha256",
+                "note"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "registry"
+                },
+                "uri": {
+                  "const": "https://dontblink.community/data/ours.json"
+                },
+                "inputSha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "note": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "gmgn": {
+      "type": "object",
+      "required": [
+        "submission",
+        "listing"
+      ],
+      "properties": {
+        "submission": {
+          "type": "object",
+          "required": [
+            "status",
+            "evidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "evidence": {
+              "type": "array",
+              "maxItems": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "listing": {
+          "type": "object",
+          "required": [
+            "status",
+            "evidence"
+          ],
+          "properties": {
+            "status": {
+              "const": "unknown"
+            },
+            "evidence": {
+              "type": "array",
+              "maxItems": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

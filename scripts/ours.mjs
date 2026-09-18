@@ -735,4 +735,4 @@ console.log(`游标 → v1=${scan.v1} v2=${scan.v2}`)
 console.log(`ours.json written: ${list.length} tokens`)
 
 // GMGN API: derived from exactly the ours.json written above; failure aborts the snapshot.
-console.log("verified API:", await (await import("./gmgn-api/run.mjs")).updateRegistry());
+console.log("verified API:", await (await import("./gmgn-api/run.mjs")).updateRegistry(process.cwd(), undefined, { refreshLifecycle: true }));

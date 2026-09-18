@@ -4,6 +4,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { address, SCHEMA, DISCLAIMER } from './generate.mjs'
+import { validateTokenLifecycle, validateDirectoryLifecycle } from './lifecycle.mjs'
 
 export function parseJsonResponse(response, body, expectedSchema) {
   if (!response.ok) return { recognized: null, reason: `http_${response.status}`, transportStatus: response.status }
@@ -52,8 +53,10 @@ export function validateRecord(record, chainId, token) {
   assert(Number.isFinite(Date.parse(record.sourceSnapshotAt)))
   assert(Number.isFinite(Date.parse(record.generatedAt)))
   assert(!('imageUrl' in record) && !('gt' in record))
+  if (record.lifecycle !== undefined) validateTokenLifecycle(record)
 }
 export function validateIndex(index) {
+  if (index.lifecycle !== undefined) validateDirectoryLifecycle(index)
   assert.equal(index.schema, 'dontblink.verified.index.v1')
   assert.equal(index.chainId, 4663)
   assert.equal(index.scannedToBlock, null, 'A legacy cursor is not complete coverage')
@@ -73,13 +76,18 @@ export async function verifyDirectory(directory) {
   validateIndex(index)
   const canonical = JSON.parse(await readFile(resolve(dir, `${index.chainId}/index.json`), 'utf8'))
   assert.deepEqual(canonical, index)
+  const records = []
   for (const summary of index.tokens) {
     const record = JSON.parse(await readFile(resolve(dir, `${index.chainId}/${summary.token}.json`), 'utf8'))
     validateRecord(record, index.chainId, summary.token)
     assert.equal(record.recognized, true)
+    if (index.lifecycle) validateTokenLifecycle(record, index.lifecycle.inputs)
+    else assert.equal(record.lifecycle, undefined)
+    records.push(record)
     for (const key of Object.keys(summary)) assert.deepEqual(record[key], summary[key], `Index disagrees on ${summary.token}.${key}`)
     assert.deepEqual(JSON.parse(await readFile(resolve(dir, `${summary.token}.json`), 'utf8')), record)
   }
+  if (index.lifecycle) validateDirectoryLifecycle(index, records)
   const indexed = new Set(index.tokens.map((row) => row.token))
   let tombstones = 0
   for (const file of await readdir(resolve(dir, String(index.chainId)))) {
@@ -127,6 +135,8 @@ export async function verifyHttp(base, all = false) {
     const { data } = await get(`${index.chainId}/${row.token}.json`, SCHEMA)
     validateRecord(data, index.chainId, row.token)
     assert.equal(data.recognized, true)
+    if (index.lifecycle) validateTokenLifecycle(data, index.lifecycle.inputs)
+    else assert.equal(data.lifecycle, undefined)
     for (const key of Object.keys(row)) assert.deepEqual(data[key], row[key])
     const alias = await get(`${row.token}.json`, SCHEMA)
     assert.deepEqual(alias.data, data)

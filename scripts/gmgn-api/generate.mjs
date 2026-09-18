@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { attachLifecycle } from './lifecycle.mjs'
 
 export const SOURCE_URL = 'https://dontblink.community/data/ours.json'
 export const SCHEMA = 'dontblink.verified.v1'
@@ -63,7 +64,7 @@ function launchMode(row, evidence, lines) {
   return row.mode === 'v1' ? 'v1' : 'unknown'
 }
 
-export function buildRegistry({ snapshot, manifest, inputSha256, generatedAt = new Date().toISOString(), sourceUrl = SOURCE_URL, chainId = 4663 }) {
+export function buildRegistry({ snapshot, manifest, inputSha256, generatedAt = new Date().toISOString(), sourceUrl = SOURCE_URL, chainId = 4663, lifecycleInput }) {
   if (chainId !== 4663) throw new Error('Only the Robinhood registry is connected; another chain needs a separate authoritative adapter')
   if (sourceUrl !== SOURCE_URL) throw new Error('Unexpected registry source; do not treat arbitrary token lists as authoritative')
   if (!/^[0-9a-f]{64}$/.test(inputSha256 ?? '')) throw new Error('Input SHA-256 is required')
@@ -128,7 +129,7 @@ export function buildRegistry({ snapshot, manifest, inputSha256, generatedAt = n
   const index = { schema: 'dontblink.verified.index.v1', chainId, generatedAt: timestamp, sourceSnapshotAt,
     source: { uri: sourceUrl, sha256: inputSha256 }, scannedToBlock: null, coverage,
     count: records.length, tokens: records.map(({ token, pool, poolId, symbol, source, launchMode, lpLocked }) => ({ token, pool, poolId, symbol, source, launchMode, lpLocked })) }
-  return { records, index }
+  return lifecycleInput === undefined ? { records, index } : attachLifecycle({ records, index }, lifecycleInput)
 }
 
 export async function writeRegistry(directory, registry) {

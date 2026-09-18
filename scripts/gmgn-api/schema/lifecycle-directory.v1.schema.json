@@ -1,0 +1,448 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dontblink.community/scripts/gmgn-api/schema/lifecycle-directory.v1.schema.json",
+  "$comment": "Apply to the optional lifecycle object, not the outer verified.v1 response. This URL becomes available only after source CI publication. Cross-record identities, hashes and chronology additionally require verify.mjs.",
+  "type": "object",
+  "required": [
+    "schema",
+    "generatedAt",
+    "inputs",
+    "coverage",
+    "tokenProjects",
+    "totalProjectCount",
+    "pagination",
+    "count",
+    "projects"
+  ],
+  "properties": {
+    "schema": {
+      "const": "dontblink.lifecycle.directory.v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "inputs": {
+      "type": "object",
+      "required": [
+        "thesisSnapshot",
+        "refresh"
+      ],
+      "properties": {
+        "thesisSnapshot": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "schema",
+                "uri",
+                "observedAt",
+                "sourceAt",
+                "responseSha256",
+                "recordsSha256",
+                "records"
+              ],
+              "properties": {
+                "schema": {
+                  "const": "dontblink.lifecycle.thesis-snapshot.v1"
+                },
+                "uri": {
+                  "const": "https://dontblink-thesis.lawson-e69.workers.dev/board"
+                },
+                "observedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "sourceAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "responseSha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "recordsSha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "records": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "ticker",
+                      "stock",
+                      "author",
+                      "token",
+                      "createdAt",
+                      "boundAt",
+                      "boundBy",
+                      "uri"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{12}$"
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "ticker": {
+                        "type": "string",
+                        "maxLength": 64
+                      },
+                      "stock": {
+                        "type": "string",
+                        "maxLength": 64
+                      },
+                      "author": {
+                        "type": "string",
+                        "pattern": "^0x[0-9a-f]{40}$"
+                      },
+                      "token": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^0x[0-9a-f]{40}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "boundAt": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "boundBy": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^0x[0-9a-f]{40}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "uri": {
+                        "type": "string",
+                        "format": "uri"
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "maxItems": 2000
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "refresh": {
+          "type": "object",
+          "required": [
+            "status",
+            "attemptedAt",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "not_attempted",
+                "ok",
+                "failed"
+              ]
+            },
+            "attemptedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(http_[0-9]{3}|invalid_response|network_error)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "status",
+        "absentMeans",
+        "supportedChainIds",
+        "otherChains",
+        "thesis",
+        "gmgn",
+        "limitations"
+      ],
+      "properties": {
+        "status": {
+          "const": "partial"
+        },
+        "absentMeans": {
+          "const": "unknown"
+        },
+        "supportedChainIds": {
+          "const": [
+            4663
+          ]
+        },
+        "otherChains": {
+          "const": "not_connected"
+        },
+        "thesis": {
+          "type": "object",
+          "required": [
+            "status",
+            "count",
+            "sourceAt",
+            "observedAt",
+            "ageSeconds",
+            "freshness",
+            "staleAfterSeconds"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "observed_subset",
+                "unavailable"
+              ]
+            },
+            "count": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "sourceAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "observedAt": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ageSeconds": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "freshness": {
+              "enum": [
+                "stale",
+                "recent",
+                "unavailable"
+              ]
+            },
+            "staleAfterSeconds": {
+              "const": 7200
+            }
+          },
+          "additionalProperties": false
+        },
+        "gmgn": {
+          "const": "no_submission_or_listing_evidence"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "tokenProjects": {
+      "type": "object",
+      "required": [
+        "count",
+        "indexPointer",
+        "recordTemplate",
+        "idTemplate"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "indexPointer": {
+          "const": "/tokens"
+        },
+        "recordTemplate": {
+          "const": "4663/{token}.json"
+        },
+        "idTemplate": {
+          "const": "token:4663:{token}"
+        }
+      },
+      "additionalProperties": false
+    },
+    "totalProjectCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pagination": {
+      "const": {
+        "mode": "bounded_snapshot",
+        "serverPagination": false,
+        "maxThesisRecords": 2000,
+        "maxThesisResponseBytes": 2097152,
+        "nameMaxLength": 200,
+        "symbolMaxLength": 64
+      }
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "chainId",
+          "token",
+          "name",
+          "symbol",
+          "url",
+          "record",
+          "thesisIds",
+          "launchStatus",
+          "gmgnStatus"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(token:4663:0x[0-9a-f]{40}|thesis:[0-9a-f]{12})$"
+          },
+          "kind": {
+            "enum": [
+              "token",
+              "thesis"
+            ]
+          },
+          "chainId": {
+            "const": 4663
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^0x[0-9a-f]{40}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "symbol": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "record": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^4663/0x[0-9a-f]{40}\\.json$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "thesisIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{12}$"
+            },
+            "maxItems": 2000
+          },
+          "launchStatus": {
+            "enum": [
+              "unknown",
+              "registry_observed",
+              "event_observed"
+            ]
+          },
+          "gmgnStatus": {
+            "const": "unknown"
+          }
+        },
+        "additionalProperties": false
+      },
+      "maxItems": 2000
+    }
+  },
+  "additionalProperties": false
+}
