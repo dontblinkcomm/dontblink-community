@@ -1,0 +1,1 @@
+import{dj as a,d$ as n}from"./index-36hTG-lG.js";function u({active:t,children:l}){const[e,r]=a.useState(null);return a.useEffect(()=>{r(t?document.getElementById("launch-chain-wallet"):null)},[t]),t&&e?n.createPortal(l,e):null}export{u as L};

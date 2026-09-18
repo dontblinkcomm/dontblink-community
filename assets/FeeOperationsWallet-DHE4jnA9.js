@@ -1,0 +1,1 @@
+import{dj as a,d$ as r,dk as n}from"./index-36hTG-lG.js";function u({active:e,children:t}){const[s,l]=a.useState(null);return a.useEffect(()=>{l(e?document.getElementById("ops-chain-wallet"):null)},[e]),e?s?r.createPortal(t,s):n.jsx("div",{className:"fee-wallet-inline",children:t}):null}export{u as F};
