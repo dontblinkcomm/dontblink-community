@@ -1,9 +1,9 @@
 {
  "name": "dontblink",
- "timestamp": "2026-09-17T22:41:21.184Z",
+ "timestamp": "2026-09-18T00:49:29.352Z",
  "version": {
   "major": 1,
-  "minor": 23,
+  "minor": 24,
   "patch": 0
  },
  "keywords": [
@@ -14,6 +14,13 @@
  ],
  "logoURI": "https://dontblink.community/favicon.png",
  "tokens": [
+  {
+   "chainId": 4663,
+   "address": "0xe9464c5e9CE16DAbB8dfb6581C89fd0f72DbDbdb",
+   "name": "Dontblink QA First Buy",
+   "symbol": "QAFB",
+   "decimals": 18
+  },
   {
    "chainId": 4663,
    "address": "0x964D2B763BEcFD9C015a2a3C9f648bD85bDBdbDB",
