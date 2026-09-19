@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-19T04:05:04Z",
+ "generated_at": "2026-09-19T05:00:30Z",
  "chains": {
   "4663": {
-   "block": 66782841,
-   "read_at": "2026-09-19T04:05:03Z",
+   "block": 66815803,
+   "read_at": "2026-09-19T05:00:29Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -36,7 +36,7 @@
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "331846961094689374"
+         "amount_wei": "331892559293736309"
         }
        ]
       },
@@ -63,7 +63,7 @@
         {
          "asset": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
          "symbol": "WETH",
-         "amount_wei": "392309899634228"
+         "amount_wei": "392660271664774"
         },
         {
          "asset": "0x8cde0178a1abd1622aef593cc7328791cb9fdbdb",
@@ -166,7 +166,7 @@
       }
      ],
      "totals_wei": {
-      "WETH": "518986065420858"
+      "WETH": "519336437451404"
      },
      "meme_side_entries": 14
     },
@@ -225,9 +225,9 @@
    "alerts": []
   },
   "56": {
-   "block": 122730585,
-   "read_at": "2026-09-19T04:07:35Z",
-   "now_unix": 1789790855,
+   "block": 122738103,
+   "read_at": "2026-09-19T05:03:59Z",
+   "now_unix": 1789794239,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
@@ -356,7 +356,7 @@
   }
  },
  "usd_rates": {
-  "WETH": 2619.71,
+  "WETH": 2618.07,
   "source": "geckoterminal(eth mainnet WETH)",
   "note": "估值仅用于阈值;失效时退化为 WETH 计价阈值 0.06"
  }
