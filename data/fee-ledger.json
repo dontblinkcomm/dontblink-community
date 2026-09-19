@@ -1,10 +1,10 @@
 {
  "version": "fee-ledger/0.1",
- "generated_at": "2026-09-19T00:04:55Z",
+ "generated_at": "2026-09-19T01:00:22Z",
  "chains": {
   "4663": {
-   "block": 66639848,
-   "read_at": "2026-09-19T00:04:54Z",
+   "block": 66672912,
+   "read_at": "2026-09-19T01:00:21Z",
    "layers": {
     "lp_unclaimed": {
      "trigger": {
@@ -36,7 +36,7 @@
         {
          "asset": "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
          "symbol": "TOKEN",
-         "amount_wei": "329500972843190679"
+         "amount_wei": "329578915460291886"
         }
        ]
       },
@@ -225,9 +225,9 @@
    "alerts": []
   },
   "56": {
-   "block": 122698680,
-   "read_at": "2026-09-19T00:08:08Z",
-   "now_unix": 1789776488,
+   "block": 122705878,
+   "read_at": "2026-09-19T01:02:11Z",
+   "now_unix": 1789779731,
    "layers": {
     "feesplitter_claimable": {
      "trigger": {
@@ -314,41 +314,10 @@
       "method": "IndexVault.executeBuyback(amountIn,minOut)",
       "permissionless": true
      },
-     "clones": [
-      {
-       "address": "0xbedfe7a0cc0d98612de14ab94dd376260c9ec019",
-       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-       "asset_symbol": "WBNB",
-       "amount_wei": "491525158141982"
-      },
-      {
-       "address": "0x0de2363c51350aa2d06b0f239b5dec89b36e3f34",
-       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-       "asset_symbol": "WBNB",
-       "amount_wei": "100514836538472"
-      },
-      {
-       "address": "0xaaa4dbf6f87733f2d0e22d60482d6eb2557d8e14",
-       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-       "asset_symbol": "WBNB",
-       "amount_wei": "534937985526775"
-      },
-      {
-       "address": "0xeadba3fc74b8f2946c23ba5c9817edccdd2f0e5c",
-       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-       "asset_symbol": "WBNB",
-       "amount_wei": "739502153907050"
-      },
-      {
-       "address": "0x5a61896eb55aa18636d4ad488dd787e2b74714f8",
-       "asset": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-       "asset_symbol": "WBNB",
-       "amount_wei": "1679082981578684"
-      }
-     ],
+     "clones": [],
      "clone_count_total": 15,
      "totals_wei": {
-      "WBNB": "3545563115692963"
+      "WBNB": "0"
      }
     }
    },
@@ -356,7 +325,7 @@
   }
  },
  "usd_rates": {
-  "WETH": 2610.34,
+  "WETH": 2623.05,
   "source": "geckoterminal(eth mainnet WETH)",
   "note": "估值仅用于阈值;失效时退化为 WETH 计价阈值 0.06"
  }
