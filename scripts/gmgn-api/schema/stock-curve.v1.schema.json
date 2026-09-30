@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dontblink.community/schemas/stock-curve.v1.schema.json",
+  "title": "Additive mode 9 Stock Curve public metadata",
+  "type": "object",
+  "required": ["schema", "token", "handler", "graduator", "curve", "quote", "creator", "totalBps", "platformBps", "creatorBps", "thresholdRaw", "virtualQuoteRaw", "usdTarget8", "launchUsdPrice8", "launchEvidence"],
+  "properties": {
+    "schema": { "const": "dontblink.stock-curve.v1" },
+    "token": { "$ref": "#/$defs/address" },
+    "handler": { "$ref": "#/$defs/address" },
+    "graduator": { "$ref": "#/$defs/address" },
+    "defaultGraduator": { "$ref": "#/$defs/address", "description": "Registered handler's default. graduator may differ after a per-token governance retry and is bound by observed.binding." },
+    "curve": { "$ref": "#/$defs/address" },
+    "quote": { "$ref": "#/$defs/address" },
+    "creator": { "$ref": "#/$defs/address" },
+    "totalBps": { "type": "integer", "minimum": 50, "maximum": 1000, "multipleOf": 2 },
+    "platformBps": { "type": "integer", "minimum": 25, "maximum": 500 },
+    "creatorBps": { "type": "integer", "minimum": 25, "maximum": 500 },
+    "thresholdRaw": { "$ref": "#/$defs/raw" },
+    "virtualQuoteRaw": { "$ref": "#/$defs/raw" },
+    "usdTarget8": { "$ref": "#/$defs/raw" },
+    "launchUsdPrice8": { "$ref": "#/$defs/raw" },
+    "status": { "enum": ["curve", "stalled", "graduated"] },
+    "pool": { "type": ["object", "null"] },
+    "creatorFirstBuy": { "type": ["object", "null"] },
+    "graduationAligned": { "type": ["object", "null"], "description": "Optional sale GraduationAligned event with burnedRaw/keptRaw. V1 has no alignment event. Never assume a fixed burn percentage or infer total supply from this event alone." },
+    "graduatedTo": { "type": ["object", "null"], "description": "Sale GraduatedTo event with measured tokenAmountRaw after any alignment burn and quoteAmountRaw, before graduator dust handling. Must match the completed pool transaction." },
+    "totals": { "type": "object", "description": "Exact raw-unit cumulative curve gross/net volume, refunds, allocations and locked-position collection sums; not USD revenue or guaranteed payout." },
+    "observed": {
+      "type": "object",
+      "description": "Fixed-block state, actual total supply (not circulating supply), implementation minimum fee, current recipients' pending and graduated position. New fields are additive for archived V1 records. Block indicates freshness; historical platform recipients are excluded.",
+      "properties": {
+        "blockNumber": { "type": "integer", "minimum": 1 },
+        "totalSupplyRaw": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+        "tokenDecimals": { "type": "integer", "minimum": 0, "maximum": 36 },
+        "minTotalBps": { "enum": [50, 100] }
+      },
+      "dependentRequired": {
+        "totalSupplyRaw": ["tokenDecimals", "minTotalBps"],
+        "tokenDecimals": ["totalSupplyRaw", "minTotalBps"],
+        "minTotalBps": ["totalSupplyRaw", "tokenDecimals"]
+      }
+    },
+    "supplyAccounting": { "type": "string" },
+    "scannedToBlock": { "type": ["integer", "null"] },
+    "indexState": false
+  },
+  "$defs": {
+    "address": { "type": "string", "pattern": "^0x[0-9a-f]{40}$" },
+    "raw": { "type": "string", "pattern": "^[1-9][0-9]*$" }
+  }
+}

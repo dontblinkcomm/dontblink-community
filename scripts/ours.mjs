@@ -15,6 +15,7 @@
 // 每个端点失败都不让整轮作废；`at` 只在真拿到新数据时前进（同 snapshot.mjs 的规矩）。
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { winkLaunch, applyWinkPool, launchProvenance } from './lib/wink-index.mjs'
+import { SC, openedStockCurve, refreshStockCurve, stockCurveDiscoveryPlan, withStockCurveSupply } from './gmgn-api/stock-curve.mjs'
 
 // 发射器清单是**唯一来源**：加一种玩法 = 往 scripts/lib/launchers.json 加一条，
 // 不是往这个文件里再写一组常量。对内它是扫描源，对外同一份是 GMGN 的链上快路径。
@@ -60,7 +61,7 @@ const hex = (n) => '0x' + n.toString(16)
 const addr = (topic) => '0x' + topic.slice(26).toLowerCase()
 const word = (data, i) => data.slice(2 + i * 64, 2 + (i + 1) * 64)
 
-async function getLogs(address, topic0, from, to) {
+async function getLogs(address, topic0, from, to, indexed = []) {
   const out = []
   for (let a = from; a <= to; a += CHUNK) {
     const b = Math.min(a + CHUNK - 1, to)
@@ -68,7 +69,7 @@ async function getLogs(address, topic0, from, to) {
     // 退避 2s → 10s:回扫这种上百 chunk 的量级,RPC 的 Too Many Requests 不是 2 秒能消的。
     for (let tries = 0; tries < 3; tries++) {
       try {
-        logs = await rpc('eth_getLogs', [{ address, topics: [topic0], fromBlock: hex(a), toBlock: hex(b) }])
+        logs = await rpc('eth_getLogs', [{ address, topics: [topic0, ...indexed], fromBlock: hex(a), toBlock: hex(b) }])
         break
       } catch (e) {
         if (tries === 2) throw e
@@ -291,7 +292,8 @@ try {
     tokens.set(token, {
       token,
       pool: /^0x0+$/.test(pool) ? null : pool,
-      poolId: null,        // V4 那种 32 字节 poolId 走这个字段；Portal 线是 20 字节地址池
+      poolId: prevByToken.get(token)?.stockCurve?.pool?.poolId ?? null,
+      ...(prevByToken.get(token)?.stockCurve ? { stockCurve: prevByToken.get(token).stockCurve, curve: prevByToken.get(token).curve, quote: prevByToken.get(token).quote, gt: prevByToken.get(token).gt } : {}),
       mode,
       source: 'factory',   // 币由 Portal CREATE2 发出 —— 链上按部署者判得出来
       provenance: { ...launchProvenance(lg, 'Launched'), portalMode: parseInt(word(lg.data, 1), 16) },
@@ -322,7 +324,6 @@ try {
 // 顺带把「新玩法没登记」这件事做成**响而不是消失**：modeId 不在清单里就标 'unknown'，
 // 币照常出现。拿一个错的具体值（instant）冒充已知，比说不知道更糟。
 const V2_TOPIC_LAUNCHED_VIA = '0xe17326ee63967aea3e1e6982764442d7ebf35a1d616567c770ad64eba3dde205' // LaunchedVia(token, modeId, handler)
-const MODE_BY_ID = new Map(LINES.filter((l) => l.modeId != null).map((l) => [l.modeId, l.mode]))
 try {
   // 全史一次扫完：至今只有 4 条，成本忽略不计，而增量游标会漏掉携带的坏行。
   const viaLogs = await getLogs(V2_PORTAL, V2_TOPIC_LAUNCHED_VIA, V2_FROM_BLOCK, head)
@@ -330,7 +331,8 @@ try {
   for (const lg of viaLogs) {
     const token = addr(lg.topics[1])
     const modeId = parseInt(lg.topics[2], 16)
-    const want = MODE_BY_ID.get(modeId) ?? 'unknown'
+    const registered = LINES.find(line => line.modeId === modeId && line.launcher?.toLowerCase() === addr(lg.topics[3]) && line.deployBlock <= parseInt(lg.blockNumber, 16))
+    const want = registered?.mode ?? 'unknown'
     const t = tokens.get(token)
     if (t) t.handlerEvidence = { ...launchProvenance(lg, 'LaunchedVia'), modeId, handler: addr(lg.topics[3]) }
     if (t && t.mode !== want) {
@@ -346,6 +348,44 @@ try {
 } catch (e) {
   scanFailed = true
   console.log('LaunchedVia scan failed:', String(e).slice(0, 120))
+}
+
+// ---- Stock Curve mode 9: Portal provenance + handler metadata + V4 lifecycle ----
+// Portal.pool is always zero for mode 9. Only the registered graduator's event
+// establishes its 32-byte V4 poolId; never probe SplitSale or use the token as pool.
+const stockCurveOpenedTo = prevScan.stockCurveOpened && typeof prevScan.stockCurveOpened === 'object' ? { ...prevScan.stockCurveOpened } : {}
+let stockCurveRefreshed = 0
+for (const { line, key, fromBlock, toBlock } of stockCurveDiscoveryPlan(LINES, stockCurveOpenedTo, { head, overlap: OVERLAP })) {
+  try {
+    // Stage the complete handler scan. A malformed event cannot leave half this
+    // handler's tokens updated while its cursor and companions stay old.
+    const staged = new Map()
+    for (const log of await getLogs(line.launcher, SC.opened, fromBlock, toBlock)) {
+      const token = addr(log.topics[1])
+      staged.set(token, openedStockCurve(tokens.get(token), log, line))
+    }
+    for (const [token, row] of staged) tokens.set(token, row)
+    stockCurveOpenedTo[key] = head
+  } catch (error) {
+    scanFailed = true
+    console.log('StockCurveOpened scan incomplete; retaining cursor:', String(error).slice(0, 160))
+  }
+}
+for (const row of tokens.values()) {
+    if (row.handlerEvidence?.modeId !== 9 || row.mode !== 'stockcurve') continue
+    row.mode = 'stockcurve'
+    row.pool = null
+    if (!row.stockCurve) { scanFailed = true; stockCurveOpenedTo[row.handlerEvidence.handler.toLowerCase()] = null; continue }
+    try {
+      const updated = await refreshStockCurve(row, { rpc, getLogs, head, overlap: OVERLAP })
+      tokens.set(row.token, updated)
+      stockCurveRefreshed++
+    } catch (error) {
+      scanFailed = true
+      // Old state remains timestamped at its observed block. No failed cursor
+      // advance and no invented zero fee, empty ledger or successful graduation.
+      console.log(`Stock Curve ${row.token}: snapshot retained:`, String(error).slice(0, 160))
+    }
 }
 
 // ---- wink 线(A 路)：**只认我们四个发射器发出的 WinkModeLaunched** ----
@@ -401,7 +441,7 @@ for (const t of tokens.values()) {
 // 治法:对「无池子」的携带行每轮补问一次 saleResult,有结算池的就是被记坏的
 // sale 行,当场改正。当前这样的行只有个位数,每行一个 eth_call,幂等,失败即跳过。
 for (const t of tokens.values()) {
-  if (!t.pool && t.mode !== 'v1' && t.mode !== 'wink') {
+  if (!t.pool && t.mode !== 'v1' && t.mode !== 'wink' && t.handlerEvidence?.modeId !== 9) {
     const p = await salePool(t.token)
     if (p) {
       console.log(`治愈携带坏行: ${t.symbol} ${t.token} ${t.mode}→sale pool=${p}`)
@@ -489,6 +529,7 @@ for (let i = 0; i < withPool.length; i += 30) {
       // "Rate limit exceeded"。现在每枚 ~200 字节。
       const a = p.attributes
       const baseId = p.relationships?.base_token?.data?.id
+      if (t.mode === 'stockcurve' && String(baseId).toLowerCase() !== `robinhood_${t.token}`) continue // never label the stock quote price as the launched token
       const base = included.find((x) => x.id === baseId)
       const tx = a.transactions?.h24
       const img = base?.attributes?.image_url
@@ -714,7 +755,9 @@ for (const [token, img] of v2Images) {
 }
 if (amended) console.log(`元数据更新落到 ${amended} 枚已知币上`)
 
-const list = [...tokens.values()].filter((t) => !SUPERSEDED.has(t.token)).sort((a, b) => b.createdBlock - a.createdBlock)
+// Recompute even when GT falls back to a carried price; its timestamp remains
+// unchanged. A failed live supply read leaves valuation unknown, never at 1B.
+const list = [...tokens.values()].map(row => withStockCurveSupply(row, head)).filter((t) => !SUPERSEDED.has(t.token)).sort((a, b) => b.createdBlock - a.createdBlock)
 
 // 最后一道闸:扫描失败时列表**不许比上一版短**。补回逻辑应该已经保证了这一点,
 // 但这个判断是免费的,而它挡住的是「站上少了几十枚币」这种没人会立刻发现的事故。
@@ -729,8 +772,9 @@ const scan = {
   v2: v2ScannedTo ?? prevScan.v2 ?? null,
   v2meta: v2MetaScannedTo ?? prevScan.v2meta ?? null,
   wink: winkScannedTo,
+  stockCurveOpened: stockCurveOpenedTo,
 }
-await writeFile('data/ours.json', JSON.stringify({ at: fresh > 0 ? Date.now() : (prev?.at ?? Date.now()), scan, tokens: list }))
+await writeFile('data/ours.json', JSON.stringify({ at: fresh > 0 || stockCurveRefreshed > 0 ? Date.now() : (prev?.at ?? Date.now()), scan, tokens: list }))
 console.log(`游标 → v1=${scan.v1} v2=${scan.v2}`)
 console.log(`ours.json written: ${list.length} tokens`)
 

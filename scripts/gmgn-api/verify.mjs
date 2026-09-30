@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url'
 import { address, SCHEMA, DISCLAIMER } from './generate.mjs'
 import { validateTokenLifecycle, validateDirectoryLifecycle } from './lifecycle.mjs'
 import { validatePlatformBadge } from './platform-badge.mjs'
+import { validateStockCurvePublic } from './stock-curve.mjs'
 
 export function parseJsonResponse(response, body, expectedSchema) {
   if (!response.ok) return { recognized: null, reason: `http_${response.status}`, transportStatus: response.status }
@@ -32,7 +33,7 @@ export function validateRecord(record, chainId, token) {
   if (record.recognized === null) { assert.equal(record.reason, 'not_in_current_registry'); return }
   assert(['factory', 'clone', 'registered'].includes(record.source))
   assert.equal(record.launchedOnDontblink, record.source !== 'registered')
-  assert(['v1', 'instant', 'queue', 'curve', 'sale', 'wink', 'unknown'].includes(record.launchMode))
+  assert(['v1', 'instant', 'queue', 'curve', 'sale', 'wink', 'stockcurve', 'unknown'].includes(record.launchMode))
   assert.equal(address(record.pool, true), record.pool)
   assert(record.poolId === null || (/^0x[0-9a-f]{64}$/.test(record.poolId) && !/^0x0+$/.test(record.poolId)))
   assert.equal(record.lpLockEvidence, null)
@@ -55,6 +56,11 @@ export function validateRecord(record, chainId, token) {
   assert(Number.isFinite(Date.parse(record.sourceSnapshotAt)))
   assert(Number.isFinite(Date.parse(record.generatedAt)))
   assert(!('imageUrl' in record) && !('gt' in record))
+  if (record.launchMode === 'stockcurve') {
+    assert.equal(record.pool, null)
+    assert.equal(record.tokenUrl, `https://dontblink.community/stock-curve/${record.token}`)
+    if (record.stockCurve) validateStockCurvePublic(record.stockCurve, { token: record.token, pool: record.pool, poolId: record.poolId, creator: record.creator, transactionHash: record.evidence.transactionHash })
+  }
   if (record.lifecycle !== undefined) validateTokenLifecycle(record)
 }
 export function validateIndex(index) {

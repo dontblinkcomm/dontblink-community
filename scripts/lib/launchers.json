@@ -2,7 +2,7 @@
   "$comment": [
     "发射器单一来源清单 —— 一处配置，生成器(ours.mjs)、站点、对外登记表(GMGN)共读。",
     "新增一种玩法 = 在 lines 里加一条。没加 = 对账层会报警，而不是静默消失。",
-    "⚠️ 本文件的每一个地址、块高、字节码判据都是 2026-09-16 逐个链读出来的，不是抄文档。",
+    "初始清单于 2026-09-16 逐项链上核验；后续新增地址的证据日期、激活块和验证来源见各条目及 docs/acceptance。",
     "重读方法见同目录 verify.sh；publish-check 会跑它。"
   ],
   "version": 1,
@@ -15,7 +15,8 @@
       "deployerKeys": [
         { "address": "0x661520f9A96eE6b7CF33308906C5965cC98E56a4", "role": "deployer(主)" },
         { "address": "0x73461ffd0e7f29753039f5434fA3fDcE11fB985D", "role": "deployer(次)" },
-        { "address": "0xc1C52bA9CdF0E2e0169A8e6e8bD6B7C75a797c53", "role": "deployer(v1 时期)" }
+        { "address": "0xc1C52bA9CdF0E2e0169A8e6e8bD6B7C75a797c53", "role": "deployer(v1 时期)" },
+        { "address": "0x14020396ca8198Ce4a7005465064830CDB699FEa", "role": "deployer(股票曲线 mode 9，2026-09-28 新建专用钱包)" }
       ],
       "lines": [
         {
@@ -113,6 +114,116 @@
           "launchCount": 4
         },
         {
+          "id": "portal-handler-stockcurve",
+          "mode": "stockcurve",
+          "label": "StockCurve handler（Portal launchVia，modeId=9；股票报价内盘 → Uniswap V4）",
+          "launcher": "0x7221957b539e1b043ad92a069f9e59b3aadbe25e",
+          "codeSize": 9518,
+          "deployBlock": 75219034,
+          "deployTx": "0x07384170a747c92054eae0c4f465a2f33ec974cde4406b5bcc64dbcf86955177",
+          "blockscoutVerified": true,
+          "contractName": "StockCurveHandler",
+          "modeId": 9,
+          "deployEvent": {
+            "name": "LaunchedVia(address,uint16,address)",
+            "topic0": "0xe17326ee63967aea3e1e6982764442d7ebf35a1d616567c770ad64eba3dde205",
+            "note": "币仍由 Portal CREATE2 发出（BlinkToken 二代克隆），链上按部署者判得出；玩法名与参数看 handler 的 StockCurveOpened。",
+            "companion": {
+              "name": "StockCurveOpened(address indexed token, address indexed curve, address indexed quote, address creator, uint16 totalBps, uint128 threshold, uint128 virtualQuote, uint16 maxBuyBps, uint96 usdTarget, uint256 usdPrice8)",
+              "topic0": "0x035e550d0805d383eea39cb4677ca37beb0e50d97df01c891935262917fbd1f5"
+            },
+            "graduated": {
+              "emitter": "0x25e32a152022d518b0359c480b1e3d93602d3463",
+              "name": "Graduated(address indexed token, bytes32 indexed poolId, address currency0, address currency1, uint24 fee, int24 tickSpacing, uint128 liquidity, uint256 amount0, uint256 amount1)",
+              "topic0": "0x1ec2edb8b6787d7e9b23a0f1b3c4403d00fab0f4b23553d50df8cb5f34c355a0",
+              "note": "毕业池是 V4（无 hook），没有池子地址；Portal launches[token].pool 对此玩法恒为 0，判毕业看这条事件。"
+            }
+          },
+          "related": {
+            "curveImpl": {
+              "address": "0xe431f3a931f1c48ea270f9f1dc68df9f0fc35ff9",
+              "contractName": "StockCurveSale",
+              "codeSize": 7116,
+              "deployTx": "0xf1bc3399d2133ebded5e9d214c1d73acd2ba82a389d31439e5ffd95fa7dc1fd2",
+              "blockscoutVerified": true
+            },
+            "graduator": {
+              "address": "0x25e32a152022d518b0359c480b1e3d93602d3463",
+              "contractName": "StockCurveV4Graduator",
+              "codeSize": 10244,
+              "deployTx": "0x44c85a2cf5a223a5854b501d1cac3569886ea5013761238efd513d6c699fd9e0",
+              "blockscoutVerified": true
+            }
+          },
+          "tokenDeployer": "0x7a4EB7F99833178c6463184bd0D8d17b6FC2d59c",
+          "chainJudgable": true,
+          "gmgnSource": "factory",
+          "launchCount": 0,
+          "activeForNewLaunches": false,
+          "status": "V1 历史发行保留：2026-09-29 Safe nonce 21 上线；2026-09-30 nonce 23 已将新发射切到 V2。V1 曲线仍使用自己的 handler/模板/毕业合约，继续交易、毕业和领费。"
+        },
+        {
+          "id": "portal-handler-stockcurve-v2",
+          "mode": "stockcurve",
+          "label": "StockCurve V2 handler（Portal launchVia，modeId=9；最低 0.5%，毕业销毁对齐 → Uniswap V4）",
+          "launcher": "0x671adbe6d91cb0416c250385237d49c7f818b4e3",
+          "codeSize": 9518,
+          "runtimeKeccak": "0x5975662df3b8d03dc4d05a3abf3a1dd1d874afe2f046dd56832aa83db622a502",
+          "deployBlock": 76131572,
+          "deployTx": "0x77967193e14dbb04210639056d69a4699d14d4b41cedbffe2c79e1fde08830a3",
+          "deployer": "0x14020396ca8198ce4a7005465064830cdb699fea",
+          "blockscoutVerified": null,
+          "contractName": "StockCurveHandler",
+          "modeId": 9,
+          "minTotalBps": 50,
+          "verifiedAt": "2026-09-30",
+          "checkedAtBlock": 76425145,
+          "activationBlock": 76404671,
+          "activationTx": "0xdfdd2d4c2f645108ee03e8fbd586151c4370e8b95a9510e0c3db85dead18f3c7",
+          "safeNonce": 23,
+          "activeForNewLaunches": true,
+          "verificationSource": "Mainnet deployment receipts/sender, runtime size/hash and Portal.modeHandler(9)/ModeHandlerSet independently read at block 76425145. Explorer API returned HTML; current explorer verification status remains unknown. See docs/acceptance/STOCK-CURVE-V2-RELEASE-2026-09-30.md.",
+          "deployEvent": {
+            "name": "LaunchedVia(address,uint16,address)",
+            "topic0": "0xe17326ee63967aea3e1e6982764442d7ebf35a1d616567c770ad64eba3dde205",
+            "note": "币仍由 Portal CREATE2 发出；以 LaunchedVia 的实际 handler 区分 V1/V2，扫描两个正式 handler，勿登记误部署作废组。",
+            "companion": {
+              "name": "StockCurveOpened(address indexed token, address indexed curve, address indexed quote, address creator, uint16 totalBps, uint128 threshold, uint128 virtualQuote, uint16 maxBuyBps, uint96 usdTarget, uint256 usdPrice8)",
+              "topic0": "0x035e550d0805d383eea39cb4677ca37beb0e50d97df01c891935262917fbd1f5"
+            },
+            "graduated": {
+              "emitter": "0x67af07b87bec2cf9ccdfbb6f292b84a781d87c25",
+              "name": "Graduated(address indexed token, bytes32 indexed poolId, address currency0, address currency1, uint24 fee, int24 tickSpacing, uint128 liquidity, uint256 amount0, uint256 amount1)",
+              "topic0": "0x1ec2edb8b6787d7e9b23a0f1b3c4403d00fab0f4b23553d50df8cb5f34c355a0",
+              "note": "默认 V4 毕业合约（无 hook）。单币治理重试后以 curve.graduator() 为准；同时读取 GraduationAligned/GraduatedTo 与实际 totalSupply，不写死毕业后供应量。"
+            }
+          },
+          "related": {
+            "curveImpl": {
+              "address": "0xab430de9360f01542a384bd102adac6a2d6dc452",
+              "contractName": "StockCurveSale",
+              "codeSize": 7593,
+              "runtimeKeccak": "0xe701dffd4f26c469c4fffcab2edcb67cee850752389d084f95d1521912efe207",
+              "deployBlock": 76131543,
+              "deployTx": "0x04ea07a28d2d9d797907e28605158b0a53ef86448eed25df6fb24f70f6d8fb5e",
+              "blockscoutVerified": null
+            },
+            "graduator": {
+              "address": "0x67af07b87bec2cf9ccdfbb6f292b84a781d87c25",
+              "contractName": "StockCurveV4Graduator",
+              "codeSize": 10244,
+              "runtimeKeccak": "0x9c0274c95eb804ef481c9bca4f68e3f41d54ce65e0653cd44366d14c5aee9362",
+              "deployBlock": 76131601,
+              "deployTx": "0x869155ddbbbcfa8d8dd6c65055a1c822fdb6d7af7838d94d50e8278348af9e6c",
+              "blockscoutVerified": null
+            }
+          },
+          "tokenDeployer": "0x7a4EB7F99833178c6463184bd0D8d17b6FC2d59c",
+          "chainJudgable": true,
+          "gmgnSource": "factory",
+          "status": "live 2026-09-30：Safe nonce 23 已执行，Portal.modeHandler(9) 指向本正式组。V1 条目保留，仅新发射使用 V2。"
+        },
+        {
           "id": "wink",
           "mode": "wink",
           "label": "wink mode（3.3% 税 → BLINK 地板金库），骑 Doppler Airlock 轨道",
@@ -175,6 +286,30 @@
       ],
       "notLaunchers": [
         { "address": "0xfD6aa07b5df9808aEB786A29c2685E8965246d39", "name": "CurveModule", "codeSize": 10156, "deployBlock": 38010778, "blockscoutVerified": true, "why": "内盘毕业建池模块，不发币。别放进对外的「工厂地址」清单。" },
+        {
+          "address": "0xCbbBe3bb795Eb1D106357Ce5DA3C780aDa4C65eB",
+          "name": "CurveModule-ETH-nonce22",
+          "codeSize": 10367,
+          "runtimeKeccak": "0xcf3db495b731a0ae1c2011936d8c9a62a3596837f603f2e87947e8af3957f601",
+          "blockscoutVerified": true,
+          "verificationSource": "Contract handoff §8 reports Blockscout exact match; runtime size/hash and activation independently checked via RPC.",
+          "activationBlock": 76100753,
+          "activationTx": "0x5a651a8622b3156023a7a9c4239d82485d4d4a20c74037be1494b40800342044",
+          "safeNonce": 22,
+          "checkedAtBlock": 76137067,
+          "curveImpl": "0xf331A0d9eb1D2b6E8418146F65A5e27594eC5720",
+          "why": "ETH 内盘毕业建池模块，不发币。Safe nonce 22 后 Portal.curveModule 指向此地址；旧模块保留供历史盘使用，不作为工厂归属判据。"
+        },
+        {
+          "address": "0xf331A0d9eb1D2b6E8418146F65A5e27594eC5720",
+          "name": "CurveSale-ETH-nonce22",
+          "checkedAtBlock": 76137067,
+          "codeSize": 7685,
+          "runtimeKeccak": "0x3b59daa498b5cc95455e25602279288e666a22f4557c2c734cb6d15978a30d02",
+          "blockscoutVerified": true,
+          "verificationSource": "Contract handoff §8 reports Blockscout exact match; runtime size/hash and module.curveImpl independently checked via RPC.",
+          "why": "新 ETH 曲线模板，不发币。进入毕业要求剩余 gas ≥ 8M；前端毕业买单预留 9M。不是股票曲线 V2 模板，也不作为币归属判据。"
+        },
         { "address": "0x1B37D3a72082029c44B35B604Ea473617580b69a", "name": "DopplerERC20V1Factory", "codeSize": 1912, "deployBlock": null, "deployTx": "0xb53eb8261ef8e76f3bb89c08dd5ca742408ec9911ed5cb0a32ac3a92dc59f7c9", "blockscoutVerified": true, "why": "⛔ 第三方共用工厂（bankr 等也在用）。绝不能作为我们的判据 —— 会给别人的币打上我们的名字。" }
       ]
     }

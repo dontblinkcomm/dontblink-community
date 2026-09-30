@@ -6,6 +6,7 @@ import { resolve, dirname } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { attachLifecycle } from './lifecycle.mjs'
 import { platformBadgeFor } from './platform-badge.mjs'
+import { publicStockCurve, validateStockCurvePublic } from './stock-curve.mjs'
 
 export const SOURCE_URL = 'https://dontblink.community/data/ours.json'
 export const SCHEMA = 'dontblink.verified.v1'
@@ -13,7 +14,7 @@ export const DISCLAIMER = 'dontblink provides launch infrastructure. This is NOT
 const ADDRESS = /^0x[0-9a-f]{40}$/
 const HASH = /^0x[0-9a-f]{64}$/
 const ZERO = `0x${'0'.repeat(40)}`
-const MODES = new Set(['v1', 'instant', 'queue', 'curve', 'sale', 'wink', 'unknown'])
+const MODES = new Set(['v1', 'instant', 'queue', 'curve', 'sale', 'wink', 'stockcurve', 'unknown'])
 export const sha256 = (value) => createHash('sha256').update(value).digest('hex')
 export function address(value, optional = false) {
   if (optional && (value == null || value === '' || String(value).toLowerCase() === ZERO)) return null
@@ -56,7 +57,7 @@ function launchMode(row, evidence, lines) {
       const valid = handler && handler.emitter?.toLowerCase() === portal?.launcher.toLowerCase() &&
         handler.topic0?.toLowerCase() === portal?.deployEvent.companion.topic0.toLowerCase() &&
         handler.transactionHash?.toLowerCase() === evidence.transactionHash && handler.blockNumber === evidence.blockNumber
-      const registered = valid && lines.find((line) => line.modeId === handler.modeId && line.launcher?.toLowerCase() === handler.handler?.toLowerCase())
+      const registered = valid && lines.find((line) => line.modeId === handler.modeId && line.launcher?.toLowerCase() === handler.handler?.toLowerCase() && line.deployBlock <= handler.blockNumber)
       return registered && MODES.has(registered.mode) ? registered.mode : 'unknown'
     }
     return 'unknown'
@@ -98,14 +99,20 @@ export function buildRegistry({ snapshot, manifest, inputSha256, generatedAt = n
     const reportedLaunchMode = MODES.has(row.mode) ? row.mode : 'unknown'
     // Routing may preserve a maintained UI hint without elevating it to verified mode evidence.
     const routeMode = mode === 'unknown' ? reportedLaunchMode : mode
-    const route = routeMode === 'curve' ? `/curve/${token}` :
+    const route = routeMode === 'stockcurve' ? `/stock-curve/${token}` : routeMode === 'curve' ? `/curve/${token}` :
       routeMode === 'queue' || routeMode === 'sale' ? `/drop/${token}` :
       routeMode === 'wink' ? poolId ? `/t/${poolId}` : `/t/${token}?resolve=token` : `/t/${pool ?? token}`
     const tokenUrl = `https://dontblink.community${route}`
+    const stockCurve = mode === 'stockcurve' ? publicStockCurve(row) : null
+    if (stockCurve) {
+      const handlerLine = lines.find(line => line.modeId === 9 && line.launcher?.toLowerCase() === row.handlerEvidence.handler.toLowerCase())
+      validateStockCurvePublic(stockCurve, { token, pool, poolId, creator: row.creator, handler: row.handlerEvidence.handler, graduator: handlerLine.related.graduator.address, transactionHash: evidence.transactionHash })
+    }
     records.push({
       schema: SCHEMA, chainId, token, recognized: true, source,
       launchedOnDontblink: source !== 'registered', launchMode: mode,
       reportedLaunchMode,
+      ...(mode === 'stockcurve' ? { curve: stockCurve?.curve ?? null, quote: stockCurve?.quote ?? null, stockCurve } : {}),
       pool, poolId, symbol: text(row.symbol, 64), name: text(row.name, 200),
       creator: address(row.creator, true), createdBlock: block(row.createdBlock), createdAt: iso(row.createdAt),
       lpLocked: null, lpLockContract: null, lpLockEvidence: null,
@@ -117,7 +124,7 @@ export function buildRegistry({ snapshot, manifest, inputSha256, generatedAt = n
   for (const record of records) record.platformBadge = platformBadgeFor(record)
   records.sort((a, b) => a.token.localeCompare(b.token))
   const scan = Object.fromEntries(Object.entries(snapshot.scan ?? {}).map(([key, value]) => [key,
-    key === 'wink' && value && typeof value === 'object' && !Array.isArray(value)
+    ['wink', 'stockCurveOpened'].includes(key) && value && typeof value === 'object' && !Array.isArray(value)
       ? Object.fromEntries(Object.entries(value).map(([emitter, height]) => [address(emitter), block(height)]))
       : block(value)]))
   // There is no verified completeness checkpoint in the legacy input. A market snapshot timestamp is not one.
