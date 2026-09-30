@@ -14,6 +14,7 @@
 // 输出 data/ours.json：{ at, tokens: [{token,pool,mode,name,symbol,createdBlock,gt?}] }
 // 每个端点失败都不让整轮作废；`at` 只在真拿到新数据时前进（同 snapshot.mjs 的规矩）。
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { createRpc, validSnapshot } from './lib/indexer-rpc.mjs'
 import { winkLaunch, applyWinkPool, launchProvenance } from './lib/wink-index.mjs'
 import { SC, openedStockCurve, refreshStockCurve, stockCurveDiscoveryPlan, withStockCurveSupply } from './gmgn-api/stock-curve.mjs'
 
@@ -35,28 +36,8 @@ const V2_FROM_BLOCK = 38269916 // v2 部署块
 const CHUNK = 100_000
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-let rpcId = 0
-// 429 在这一层就重试:实测限流是**间歇的**(前一秒的探测能过,下一秒的调用被拒),
-// 而 eth_blockNumber / eth_call 这些裸调用原来没有任何重试 —— 砸中一次,整轮作废。
-const RPC_BACKOFF = [2_000, 5_000, 10_000, 20_000]
-async function rpc(method, params) {
-  for (let tries = 0; ; tries++) {
-    const r = await fetch(RPC, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: ++rpcId, method, params }),
-    })
-    const j = await r.json()
-    if (j.error) {
-      if (tries < RPC_BACKOFF.length && /too many requests/i.test(String(j.error.message))) {
-        await sleep(RPC_BACKOFF[tries])
-        continue
-      }
-      throw new Error(`${method}: ${j.error.message}`)
-    }
-    return j.result
-  }
-}
+// One bounded retry budget, on this endpoint only: switching RPCs can skip logs.
+const rpc = createRpc(RPC)
 const hex = (n) => '0x' + n.toString(16)
 const addr = (topic) => '0x' + topic.slice(26).toLowerCase()
 const word = (data, i) => data.slice(2 + i * 64, 2 + (i + 1) * 64)
@@ -65,17 +46,7 @@ async function getLogs(address, topic0, from, to, indexed = []) {
   const out = []
   for (let a = from; a <= to; a += CHUNK) {
     const b = Math.min(a + CHUNK - 1, to)
-    let logs
-    // 退避 2s → 10s:回扫这种上百 chunk 的量级,RPC 的 Too Many Requests 不是 2 秒能消的。
-    for (let tries = 0; tries < 3; tries++) {
-      try {
-        logs = await rpc('eth_getLogs', [{ address, topics: [topic0, ...indexed], fromBlock: hex(a), toBlock: hex(b) }])
-        break
-      } catch (e) {
-        if (tries === 2) throw e
-        await sleep(tries === 0 ? 2000 : 10_000)
-      }
-    }
+    const logs = await rpc('eth_getLogs', [{ address, topics: [topic0, ...indexed], fromBlock: hex(a), toBlock: hex(b) }])
     out.push(...logs)
     // chunk 之间歇一下 —— 连发一百多个 getLogs 实测会把整台机器的 RPC 配额打穿,
     // 后面的 eth_call 全跟着 429。增量轮只有一两个 chunk,这点延迟无感。
@@ -173,7 +144,31 @@ for (const t of archive) {
     createdAt: t.createdAt ?? null,
   })
 }
-const head = parseInt(await rpc('eth_blockNumber', []), 16)
+async function writeScanStatus(reason, head = null) {
+  await mkdir('data', { recursive: true })
+  await writeFile('data/indexer-status.json', JSON.stringify({
+    schema: 'dontblink.indexer-status.v1', checkedAt: Date.now(),
+    status: scanFailed ? 'degraded' : 'ok', scanFailed, reason, head,
+  }) + '\n')
+}
+let head
+try {
+  const value = await rpc('eth_blockNumber', [])
+  if (typeof value !== 'string' || !/^0x[0-9a-f]+$/i.test(value)) throw new Error('Invalid chain head')
+  head = Number(value)
+  if (!Number.isSafeInteger(head) || head <= 0) throw new Error('Invalid chain head')
+} catch (error) {
+  scanFailed = true
+  await writeScanStatus('chain_head_unavailable')
+  console.error('Chain head unavailable after retries; scanFailed:', error.message)
+  // No head means no scan. Keep the previous file byte-for-byte (including at
+  // and every cursor), skip pricing and the installed lifecycle refresh hook.
+  // The runner can still publish boards + a red status, then derive SEO/GMGN
+  // from the unchanged source. A first run without a usable source must stop.
+  if (!validSnapshot(prev)) throw new Error('Chain head unavailable and no valid previous snapshot')
+  console.error('Retaining previous ours.json; no scan cursor or timestamp advanced')
+  process.exit(0)
+}
 const archiveHead = Math.max(0, ...archive.map((t) => Number(t.createdBlock ?? 0)))
 console.log(`v1 archive: ${archive.length} tokens up to block ${archiveHead}; head=${head}`)
 console.log(`带过来上一版发现的 ${carryPrev(tokens)} 枚(游标 v1=${prevScan.v1 ?? '无'} v2=${prevScan.v2 ?? '无'})`)
@@ -763,6 +758,7 @@ const list = [...tokens.values()].map(row => withStockCurveSupply(row, head)).fi
 // 但这个判断是免费的,而它挡住的是「站上少了几十枚币」这种没人会立刻发现的事故。
 if (scanFailed && prev?.tokens?.length && list.length < prev.tokens.length) {
   console.log(`拒绝写入:扫描失败且列表从 ${prev.tokens.length} 缩到 ${list.length},保留上一版`)
+  await writeScanStatus('partial_scan_snapshot_retained', head)
   process.exit(0)
 }
 await mkdir('data', { recursive: true })
@@ -777,6 +773,8 @@ const scan = {
 await writeFile('data/ours.json', JSON.stringify({ at: fresh > 0 || stockCurveRefreshed > 0 ? Date.now() : (prev?.at ?? Date.now()), scan, tokens: list }))
 console.log(`游标 → v1=${scan.v1} v2=${scan.v2}`)
 console.log(`ours.json written: ${list.length} tokens`)
+
+await writeScanStatus(scanFailed ? 'partial_scan' : null, head)
 
 // GMGN API: derived from exactly the ours.json written above; failure aborts the snapshot.
 console.log("verified API:", await (await import("./gmgn-api/run.mjs")).updateRegistry(process.cwd(), undefined, { refreshLifecycle: true }));
