@@ -1,1 +1,1 @@
-{"schema":"dontblink.indexer-status.v1","checkedAt":1790942670721,"status":"degraded","scanFailed":true,"reason":"partial_scan","head":78178618}
+{"schema":"dontblink.indexer-status.v1","checkedAt":1790947361226,"status":"ok","scanFailed":false,"reason":null,"head":78249873}
